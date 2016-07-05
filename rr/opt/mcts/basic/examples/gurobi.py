@@ -206,11 +206,8 @@ def main(instance, niter, seed):
 
 if __name__ == "__main__":
     import sys
-    import os
 
-    if len(sys.argv) == 1:
-        main(os.path.join(os.path.dirname(__file__), "miplib3", "flugpl.mps"), 10000, 3)
-    elif len(sys.argv) == 4:
+    if len(sys.argv) == 4:
         instance = sys.argv[1]
         niter = int(sys.argv[2])
         seed = int(sys.argv[3])
