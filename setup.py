@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import pkgutil
 
 
-with open("README.rst", "r") as readme_file:
+with open("README.rst", "rt") as readme_file:
     readme = readme_file.read()
 
 setup(
