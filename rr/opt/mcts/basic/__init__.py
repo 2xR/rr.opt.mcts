@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future.builtins import object
 
+import pkgutil
 import time
 import random
 import logging
@@ -11,6 +12,7 @@ import logging.config
 from math import log, sqrt
 
 
+__version__ = pkgutil.get_data(__name__, "VERSION").decode("utf-8").strip()
 INF = float("inf")
 logger = logging.getLogger(__name__)
 debug = logger.debug
