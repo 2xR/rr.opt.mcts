@@ -1,0 +1,62 @@
+10teams.mps.gz  *BEST SOLN:     924 (opt)
+air03.mps.gz    *BEST SOLN:    340160 (opt)
+air04.mps.gz    *BEST SOLN:    56138 (opt)
+air05.mps.gz    *BEST SOLN:    26402 (not opt)
+arki001.mps.gz  * BEST SOLN:    7580813.0459 (not opt) 
+* COMMENTS:     Best Lower Bound:  7580664.0267
+bell3a.mps.gz   *BEST SOLN:    878430.32 (opt)
+bell5.mps.gz    *BEST SOLN:    8966406.49 (opt)
+blend2.mps.gz   *BEST SOLN:     7.598985
+cap6000.mps.gz  *BEST SOLN:    -2451377 (opt)
+dano3mip.mps.gz         *BEST SOLN:     728.1111 (not opt)
+danoint.mps.gz  *BEST SOLN:     65.67
+dcmulti.mps.gz  *BEST SOLN:    188182.0000
+dsbmip.mps.gz   *BEST SOLN:    -305.198 (opt)
+egout.mps.gz    *BEST SOLN:    568.101 (opt)
+enigma.mps.gz   *BEST SOLN:    0.0 (opt)
+fast0507.mps.gz         *BEST SOLN:     174
+fiber.mps.gz    *BEST SOLN:     405935.18000
+fixnet6.mps.gz  *BEST SOLN:    3983 (opt)
+flugpl.mps.gz   *BEST SOLN:    1201500 (opt)
+gen.mps.gz      *BEST SOLN:    112313 (opt)
+gesa2.mps.gz    *BEST SOLN:     25779856.372
+gesa2_o.mps.gz  *BEST SOLN:     25779856.372
+gesa3.mps.gz    *BEST SOLN:     27991042.648
+gesa3_o.mps.gz  *BEST SOLN:     27991042.648
+gt2.mps.gz      *BEST SOLN:     21166.000
+harp2.mps.gz    *BEST SOLN:     -73899798.00
+khb05250.mps.gz         *BEST SOLN:    106940226 (opt)
+l152lav.mps.gz  *BEST SOLN:    4750 (not opt)
+lseu.mps.gz     *BEST SOLN:    1120 (opt)
+misc03.mps.gz   *BEST SOLN:    3360 (opt)
+misc06.mps.gz   *BEST SOLN:    12850.8607 (opt)
+misc07.mps.gz   *BEST SOLN:    2810 (not opt) 
+mitre.mps.gz    *BEST SOLN:     115155
+mod008.mps.gz   *BEST SOLN:    307 (opt)
+mod010.mps.gz   *BEST SOLN:    6548 (opt)
+mod011.mps.gz   *BEST SOLN:    -54558535 (opt) 
+modglob.mps.gz  *BEST SOLN:    20740508 (opt)
+noswot.mps.gz   *BEST SOLN:    -43 (opt)  
+nw04.mps.gz     *BEST SOLN:     16862
+p0033.mps.gz    *BEST SOLN:    3089 (opt)
+ L  ZBESTROW
+p0201.mps.gz    *BEST SOLN:    7615 (opt)
+p0282.mps.gz    *BEST SOLN:    258411 (opt)
+p0548.mps.gz    *BEST SOLN:    8691 (opt)
+p2756.mps.gz    *BEST SOLN:    3124 (opt)
+pk1.mps.gz      *BEST SOLN:     11
+pp08a.mps.gz    *BEST SOLN:     7350
+pp08aCUT.mps.gz         *BEST SOLN:     7350
+pp08aCUTS.mps.gz        *BEST SOLN:     7350
+qiu.mps.gz      *BEST SOLN:    -132.873137 (opt)
+qnet1.mps.gz    *BEST SOLN:     16029.692681
+qnet1_o.mps.gz  *BEST SOLN:     16029.692681
+rentacar.mps.gz         *BEST SOLN:    30356761 (opt)
+rgn.mps.gz      *BEST SOLN:    82.1999 (opt)
+rout.mps.gz     *BEST SOLN:     1077.56
+set1ch.mps.gz   *BEST SOLN:    54537.7 (opt)
+seymour.mps.gz  *BEST SOLN:     423 (not opt)   
+stein27.mps.gz  *BEST SOLN:    18 (opt)
+stein45.mps.gz  *BEST SOLN:    30 (opt)
+vpm1.mps.gz     *BEST SOLN:    20 (opt)
+vpm2.mps.gz     *BEST SOLN:     13.75  (opt)

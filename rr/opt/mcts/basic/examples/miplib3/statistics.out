@@ -1,0 +1,411 @@
+PROCESSING 10teams.mps.gz
+statistics:
+rows: 231
+variables: 2025 (1800 integers)
+matrix: 12150 non zeros
+
+
+PROCESSING air03.mps.gz
+statistics:
+rows: 125
+variables: 10757 (10757 integers)
+matrix: 91028 non zeros
+
+
+PROCESSING air04.mps.gz
+statistics:
+rows: 824
+variables: 8904 (8904 integers)
+matrix: 72965 non zeros
+
+
+PROCESSING air05.mps.gz
+statistics:
+rows: 427
+variables: 7195 (7195 integers)
+matrix: 52121 non zeros
+
+
+PROCESSING arki001.mps.gz
+statistics:
+rows: 1049
+variables: 1388 (538 integers)
+matrix: 20439 non zeros
+
+
+PROCESSING bell3a.mps.gz
+statistics:
+rows: 124
+variables: 133 (71 integers)
+matrix: 347 non zeros
+
+
+PROCESSING bell5.mps.gz
+statistics:
+rows: 92
+variables: 104 (58 integers)
+matrix: 266 non zeros
+
+
+PROCESSING blend2.mps.gz
+statistics:
+rows: 275
+variables: 353 (264 integers)
+matrix: 1409 non zeros
+
+
+PROCESSING cap6000.mps.gz
+statistics:
+rows: 2177
+variables: 6000 (6000 integers)
+matrix: 48249 non zeros
+
+
+PROCESSING dano3mip.mps.gz
+statistics:
+rows: 3203
+variables: 13873 (552 integers)
+matrix: 79655 non zeros
+
+
+PROCESSING danoint.mps.gz
+statistics:
+rows: 665
+variables: 521 (56 integers)
+matrix: 3232 non zeros
+
+
+PROCESSING dcmulti.mps.gz
+statistics:
+rows: 291
+variables: 548 (75 integers)
+matrix: 1315 non zeros
+
+
+PROCESSING dsbmip.mps.gz
+statistics:
+rows: 1855
+variables: 1886 (192 integers)
+matrix: 8700 non zeros
+
+
+PROCESSING egout.mps.gz
+statistics:
+rows: 99
+variables: 141 (55 integers)
+matrix: 282 non zeros
+
+
+PROCESSING enigma.mps.gz
+statistics:
+rows: 22
+variables: 100 (100 integers)
+matrix: 289 non zeros
+
+
+PROCESSING fast0507.mps.gz
+statistics:
+rows: 508
+variables: 63009 (63009 integers)
+matrix: 409349 non zeros
+
+
+PROCESSING fiber.mps.gz
+statistics:
+rows: 364
+variables: 1298 (1254 integers)
+matrix: 2944 non zeros
+
+
+PROCESSING fixnet6.mps.gz
+statistics:
+rows: 479
+variables: 878 (378 integers)
+matrix: 1756 non zeros
+
+
+PROCESSING flugpl.mps.gz
+statistics:
+rows: 19
+variables: 18 (11 integers)
+matrix: 46 non zeros
+
+
+PROCESSING gen.mps.gz
+statistics:
+rows: 781
+variables: 870 (150 integers)
+matrix: 2592 non zeros
+
+
+PROCESSING gesa2.mps.gz
+statistics:
+rows: 1393
+variables: 1224 (408 integers)
+matrix: 5064 non zeros
+
+
+PROCESSING gesa2_o.mps.gz
+statistics:
+rows: 1249
+variables: 1224 (720 integers)
+matrix: 3672 non zeros
+
+
+PROCESSING gesa3.mps.gz
+statistics:
+rows: 1369
+variables: 1152 (384 integers)
+matrix: 4944 non zeros
+
+
+PROCESSING gesa3_o.mps.gz
+statistics:
+rows: 1225
+variables: 1152 (672 integers)
+matrix: 3624 non zeros
+
+
+PROCESSING gt2.mps.gz
+statistics:
+rows: 30
+variables: 188 (188 integers)
+matrix: 376 non zeros
+
+
+PROCESSING harp2.mps.gz
+statistics:
+rows: 113
+variables: 2993 (2993 integers)
+matrix: 5840 non zeros
+
+
+PROCESSING khb05250.mps.gz
+statistics:
+rows: 102
+variables: 1350 (24 integers)
+matrix: 2700 non zeros
+
+
+PROCESSING l152lav.mps.gz
+statistics:
+rows: 98
+variables: 1989 (1989 integers)
+matrix: 9922 non zeros
+
+
+PROCESSING lseu.mps.gz
+statistics:
+rows: 29
+variables: 89 (89 integers)
+matrix: 309 non zeros
+
+
+PROCESSING misc03.mps.gz
+statistics:
+rows: 97
+variables: 160 (159 integers)
+matrix: 2053 non zeros
+
+
+PROCESSING misc06.mps.gz
+statistics:
+rows: 821
+variables: 1808 (112 integers)
+matrix: 5859 non zeros
+
+
+PROCESSING misc07.mps.gz
+statistics:
+rows: 213
+variables: 260 (259 integers)
+matrix: 8619 non zeros
+
+
+PROCESSING mitre.mps.gz
+statistics:
+rows: 2055
+variables: 10724 (10724 integers)
+matrix: 39704 non zeros
+
+
+PROCESSING mod008.mps.gz
+statistics:
+rows: 7
+variables: 319 (319 integers)
+matrix: 1243 non zeros
+
+
+PROCESSING mod010.mps.gz
+statistics:
+rows: 147
+variables: 2655 (2655 integers)
+matrix: 11203 non zeros
+
+
+PROCESSING mod011.mps.gz
+statistics:
+rows: 4482
+variables: 10958 (96 integers)
+matrix: 29840 non zeros
+
+
+PROCESSING modglob.mps.gz
+statistics:
+rows: 292
+variables: 422 (98 integers)
+matrix: 968 non zeros
+
+
+PROCESSING noswot.mps.gz
+statistics:
+rows: 183
+variables: 128 (100 integers)
+matrix: 735 non zeros
+
+
+PROCESSING nw04.mps.gz
+statistics:
+rows: 37
+variables: 87482 (87482 integers)
+matrix: 636666 non zeros
+
+
+PROCESSING p0033.mps.gz
+statistics:
+rows: 17
+variables: 33 (33 integers)
+matrix: 98 non zeros
+
+
+PROCESSING p0201.mps.gz
+statistics:
+rows: 134
+variables: 201 (201 integers)
+matrix: 1923 non zeros
+
+
+PROCESSING p0282.mps.gz
+statistics:
+rows: 242
+variables: 282 (282 integers)
+matrix: 1966 non zeros
+
+
+PROCESSING p0548.mps.gz
+statistics:
+rows: 177
+variables: 548 (548 integers)
+matrix: 1711 non zeros
+
+
+PROCESSING p2756.mps.gz
+statistics:
+rows: 756
+variables: 2756 (2756 integers)
+matrix: 8937 non zeros
+
+
+PROCESSING pk1.mps.gz
+statistics:
+rows: 46
+variables: 86 (55 integers)
+matrix: 915 non zeros
+
+
+PROCESSING pp08a.mps.gz
+statistics:
+rows: 137
+variables: 240 (64 integers)
+matrix: 480 non zeros
+
+
+PROCESSING pp08aCUTS.mps.gz
+statistics:
+rows: 247
+variables: 240 (64 integers)
+matrix: 839 non zeros
+
+
+PROCESSING qiu.mps.gz
+statistics:
+rows: 1193
+variables: 840 (48 integers)
+matrix: 3432 non zeros
+
+
+PROCESSING qnet1.mps.gz
+statistics:
+rows: 504
+variables: 1541 (1417 integers)
+matrix: 4622 non zeros
+
+
+PROCESSING qnet1_o.mps.gz
+statistics:
+rows: 457
+variables: 1541 (1417 integers)
+matrix: 4214 non zeros
+
+
+PROCESSING rentacar.mps.gz
+statistics:
+rows: 6804
+variables: 9557 (55 integers)
+matrix: 41868 non zeros
+
+
+PROCESSING rgn.mps.gz
+statistics:
+rows: 25
+variables: 180 (100 integers)
+matrix: 460 non zeros
+
+
+PROCESSING rout.mps.gz
+statistics:
+rows: 292
+variables: 556 (315 integers)
+matrix: 2431 non zeros
+
+
+PROCESSING set1ch.mps.gz
+statistics:
+rows: 493
+variables: 712 (240 integers)
+matrix: 1412 non zeros
+
+
+PROCESSING seymour.mps.gz
+statistics:
+rows: 4945
+variables: 1372 (1372 integers)
+matrix: 33549 non zeros
+
+
+PROCESSING stein27.mps.gz
+statistics:
+rows: 119
+variables: 27 (27 integers)
+matrix: 378 non zeros
+
+
+PROCESSING stein45.mps.gz
+statistics:
+rows: 332
+variables: 45 (45 integers)
+matrix: 1034 non zeros
+
+
+PROCESSING vpm1.mps.gz
+statistics:
+rows: 235
+variables: 378 (168 integers)
+matrix: 749 non zeros
+
+
+PROCESSING vpm2.mps.gz
+statistics:
+rows: 235
+variables: 378 (168 integers)
+matrix: 917 non zeros
