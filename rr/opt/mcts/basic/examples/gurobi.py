@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 from future.builtins import object, dict, range
-from future.utils import python_2_unicode_compatible
 
 import math
 
@@ -58,7 +57,6 @@ def verify_sol(filename, sol):
 
 
 class MipTreeNode(mcts.TreeNode):
-    @python_2_unicode_compatible
     class IntVarData(object):
         def __init__(self, var):
             self.var = var

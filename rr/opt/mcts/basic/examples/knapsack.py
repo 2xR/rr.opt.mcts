@@ -110,7 +110,7 @@ class KnapsackTreeNode(mcts.TreeNode):
             self.capacity_left -= sum(i.weight for i in self.items_left)
             self.capacity_required = 0
             self.items_packed.extend(self.items_left)
-            self.items_left = ()
+            self.items_left = []
 
     def simulate(self):
         node = self.copy()
