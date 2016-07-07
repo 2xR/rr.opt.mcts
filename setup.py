@@ -25,9 +25,6 @@ setup(
     ],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    package_data={
-        "": ["LICENSE", "VERSION"],
-        "rr.opt.mcts.basic.examples": ["miplib3/*"],
-    },
+    package_data={"": ["LICENSE", "VERSION"]},
     install_requires=["future~=0.15.2"],
 )
