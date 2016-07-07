@@ -23,7 +23,8 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(),
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     package_data={
         "": ["LICENSE", "VERSION"],
         "rr.opt.mcts.basic.examples": ["miplib3/*"],
