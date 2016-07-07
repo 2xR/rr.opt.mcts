@@ -20,6 +20,16 @@ Installation
     pip install ./rr.opt.mcts.basic
 
 
+In order to avoid polluting your system's Python installation, we recommend creating and installing into a `virtualenv <https://virtualenv.pypa.io/en/stable/>`_ with the following steps:
+
+.. code-block:: bash
+
+    git clone https://github.com/2xR/rr.opt.mcts.basic.git
+    virtualenv venv
+    source venv/bin/activate  # venv\Scripts\activate on Windows
+    pip install ./rr.opt.mcts.basic
+
+
 Contributing
 ------------
 
