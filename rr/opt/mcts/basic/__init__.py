@@ -48,10 +48,10 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None, seed=None, log_iter_
             )
             node = root.select(sols)  # selection step
             if node is None:
-                info("Search completed, solution is optimal")
+                info("Search complete, solution is optimal")
                 sols.best.is_opt = True
                 break  # tree exhausted
-            children = node.expand()  # expansion step
+            children = node.expand(pruning=pruning, cutoff=sols.best.obj)  # expansion step
             if len(children) == 0:
                 node.delete()
             else:
@@ -61,11 +61,11 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None, seed=None, log_iter_
                     child.backpropagate(sol)  # backpropagation step
                     sols.update(sol)
                 # prune only once after all child solutions have been accounted for
-                if pruning and sols.best.is_feas and sols.best.obj < z0:
+                if pruning and sols.best.obj < z0:
                     ts0 = root.tree_size()
                     root.prune(sols.best.obj)
                     ts1 = root.tree_size()
-                    info("Pruning removed {} nodes".format(ts0 - ts1))
+                    info("Pruning removed {} nodes ({} => {})".format(ts0 - ts1, ts0, ts1))
             # update elapsed time and iteration counter
             t = time.clock() - t0
             i += 1
@@ -215,12 +215,6 @@ class TreeNode(object):
                 stack.extend(node.children)
         return count
 
-    def new_child(self, branch):
-        child = self.copy()
-        child.apply(branch)
-        self.add_child(child)
-        return child
-
     def add_child(self, node):
         node.path = self.path + [self]
         node.parent = self
@@ -289,12 +283,16 @@ class TreeNode(object):
         explore = sqrt(2.0 * log(self.parent.sim_count) / self.sim_count)
         return exploit + explore
 
-    def expand(self):
+    def expand(self, pruning, cutoff):
         """Generate and link all children of this node."""
         assert self.children is None
         self.children = []
         for branch in self.branches():
-            self.new_child(branch)
+            child = self.copy()
+            child.apply(branch)
+            if pruning and child.bound() >= cutoff:
+                continue
+            self.add_child(child)
         return self.children
 
     def simulate(self):
