@@ -20,17 +20,21 @@ info = logger.info
 warn = logger.warn
 
 
-def run(root, time_limit=INF, iter_limit=INF, pruning=None, seed=None, log_iter_interval=1000):
+def run(root, time_limit=INF, iter_limit=INF, pruning=None,
+        rng_seed=None, rng_state=None, log_iter_interval=1000):
     """
     Monte Carlo Tree Search for **minimization** problems. Objective functions (and bounds) for
     maximization problems must be multiplied by -1.
     """
     if pruning is None:  # guess pruning from root node's class (check if defines a bound() func)
         pruning = callable(type(root).bound)
-    if seed is None:
-        seed = int(time.time() * 1000)
-    random.seed(seed)
-    info("Starting with seed={} and pruning={}".format(seed, pruning))
+    if rng_seed is not None:
+        info("Seeding RNG with {}...".format(rng_seed))
+        random.seed(rng_seed)
+    if rng_state is not None:
+        random.setstate(rng_state)
+    info("RNG initial state is {}.".format(random.getstate()))
+    info("Pruning is {}.".format("enabled" if pruning else "disabled"))
 
     t0 = time.clock()  # initial cpu time
     sols = Solutions()  # object used to keep track of our best/worst solutions

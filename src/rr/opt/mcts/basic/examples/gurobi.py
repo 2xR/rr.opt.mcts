@@ -250,7 +250,7 @@ class MipTreeNode(mcts.TreeNode):
 
 def main(instance, niter, seed):
     root = MipTreeNode.root(instance)
-    sols = mcts.run(root, iter_limit=niter, seed=seed)
+    sols = mcts.run(root, iter_limit=niter, rng_seed=seed)
     info("solutions found: {}".format(sols))
     info("best found objective: {}".format(sols.best.obj))
     if sols.best.is_feas:
