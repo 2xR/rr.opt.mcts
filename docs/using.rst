@@ -17,7 +17,7 @@ Abstract methods:
 .. py:module:: rr.opt.mcts.basic
 
 .. autoclass:: TreeNode
-	:members:
+    :members:
 
 
 
@@ -27,5 +27,7 @@ Limitations
 #. minimization only
 
 
+
+.. rubric:: Footnotes
 
 .. [#] The module depends only on the ``future`` library for cross-version compatibility with Python 2 and 3.
