@@ -4,11 +4,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future.builtins import object
 
-import pkgutil
-import time
-import random
 import logging
 import logging.config
+import pkgutil
+import random
+import time
+import types
 from math import log, sqrt
 
 
@@ -26,8 +27,11 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
     Monte Carlo Tree Search for **minimization** problems. Objective functions (and bounds) for
     maximization problems must be multiplied by -1.
     """
-    if pruning is None:  # guess pruning from root node's class (check if defines a bound() func)
-        pruning = callable(type(root).bound)
+    if pruning is None:
+        # Guess pruning by comparing the root node's bound() method with the bound() method from
+        # the base TreeNode class.
+        original_bound_meth = types.MethodType(TreeNode.bound, root)
+        pruning = root.bound != original_bound_meth
     if rng_seed is not None:
         info("Seeding RNG with {}...".format(rng_seed))
         random.seed(rng_seed)
@@ -187,10 +191,29 @@ class Solutions(object):
 
 class TreeNode(object):
     """Base class for tree nodes. Subclasses should define:
-        - tree management methods - copy(); apply(); branches()
+        - tree management methods - root() [class method]; copy(); apply(); branches()
         - MCTS-related methods - simulate()
         - branch-and-bound methods - bound() [optional]
     """
+
+    @classmethod
+    def root(cls, instance):
+        """Given a problem instance, create the root node for the associated search tree.
+
+        This is almost completely problem-specific. Normally this method should create an empty
+        node using ``root = cls()`` and then proceed to add attributes necessary to fully
+        represent a node in the tree.
+
+        Arguments:
+            instance: an object representing an instance of a specific problem. For example, for
+                the knapsack problem, an instance would contain a list of item weights, list of
+                item values, and the knapsack's capacity.
+
+        Returns:
+            TreeNode: the root of the search tree for the argument instance.
+        """
+        raise NotImplementedError()
+
     def __init__(self):
         self.path = []  # path from root down to, but excluding, 'self' (i.e. top-down ancestors)
         self.parent = None  # reference to parent node
@@ -231,16 +254,42 @@ class TreeNode(object):
 
     # Tree management abstract methods
     def copy(self):
-        """Create a node containing a copy of this node's state."""
+        """Create a new node representing a copy of the node's state.
+
+        This method should start by creating a new "blank" node using ``clone = type(self)()``,
+        which takes care of initializing generic MCTS node attributes, and then fill in the
+        domain-specific data by copying the custom attributes that were previously defined in
+        :meth:`root`.
+
+        Returns:
+            TreeNode: the clone of the current node.
+        """
         raise NotImplementedError()
 
     def apply(self, branch):
-        """Mutate this node's state by applying one of the actions produced by branches()."""
+        """Mutate the node's state by applying a branch (as produced by :meth:`branches`).
+
+        This is domain-specific, and depends on the structure of the node and the branch data that
+        is returned by :meth:`branches`.
+
+        Arguments:
+            branch: problem-dependent object which should contain enough information to modify the
+                current node such that it represents descending one level in the tree by following
+                the argument branch.
+        """
         raise NotImplementedError()
 
     def branches(self):
-        """Produce a list of possible actions that could be applied to this node's state in order
-        to generate its children."""
+        """Produce a list of possible actions that could be applied to the current node.
+
+        This method should produce a list of branch objects. A branch object is an object (of any
+        type) which carries enough information to apply a modification (through :meth:`apply`) to
+        the current node and obtain one of its child nodes. In some cases, a branch object may be
+        something as simple as a boolean value (see *e.g.* the knapsack example).
+
+        Returns:
+            iterable of branch objects.
+        """
         raise NotImplementedError()
 
     # MCTS-related methods
@@ -359,17 +408,19 @@ class TreeNode(object):
             elif node.is_expanded:
                 stack.extend(node.children)
 
-    bound = (
-        "A bound() method shoud be defined in subclasses wanting to use pruning. By default, "
-        "pruning will be automatically activated if the root node's class defines a callable "
-        "named 'bound()'.\n\n"
-        "The bound() method should compute a lower bound on the optimal objective function "
-        "value in the subtree under self.\n\n"
-        "NOTE: in the base TreeNode class, 'bound' is not defined as a regular abstract method "
-        "like e.g. branches() because the mcts.run() function detects that the root node class "
-        "defines a bound() method using 'callable(type(root).bound)'. This should work correctly "
-        "across Python 2 & 3."
-    )
+    def bound(self):
+        """Compute a lower bound on the current subtree's optimal objective value.
+
+        A bound() method shoud be defined in subclasses wanting to use pruning. By default,
+        pruning will be automatically activated if the root node's class defines a callable
+        named 'bound()'.
+        The bound() method should compute a lower bound on the optimal objective function
+        value in the subtree under self.
+        NOTE: in the base TreeNode class, 'bound' is not defined as a regular abstract method
+        like e.g. branches() because the mcts.run() function detects that the root node class
+        defines a bound() method using 'callable(type(root).bound)'. This should work correctly
+        across Python 2 & 3."""
+        raise NotImplementedError()
 
 
 def max_elems(iterable, key=None):

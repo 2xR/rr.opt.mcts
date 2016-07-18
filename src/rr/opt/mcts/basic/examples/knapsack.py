@@ -64,7 +64,7 @@ def verify_instance(instance, *args, **kwargs):
     else:
         raise TypeError("unexpected instance value: {}".format(instance))
     mcts.config_logging(level="DEBUG")
-    root = KnapsackTreeNode.root(items, capacity)
+    root = KnapsackTreeNode.root([items, capacity])
     sols = mcts.run(root, *args, **kwargs)
     assert set(sols.best.items_packed) == optimum
     assert root.is_exhausted
@@ -72,7 +72,8 @@ def verify_instance(instance, *args, **kwargs):
 
 class KnapsackTreeNode(mcts.TreeNode):
     @classmethod
-    def root(cls, items, capacity):
+    def root(cls, instance):
+        items, capacity = instance
         root = cls()
         root.items_left = list(sorted(items, key=lambda i: i.ratio))
         root.items_packed = []
