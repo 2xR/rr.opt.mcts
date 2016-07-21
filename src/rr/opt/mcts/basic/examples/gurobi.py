@@ -186,7 +186,7 @@ class MipTreeNode(mcts.TreeNode):
     def simulate(self):
         # return a solution immediately if this is a leaf node
         if len(self.relaxed) == 0:
-            return mcts.Solution(obj=self.upper_bound, data=self.fixed())
+            return mcts.Solution(value=self.upper_bound, data=self.fixed())
         node = self.copy()
         node.solve_relaxation()  # determine variable values in initial LP
         while len(node.relaxed) > 0:
@@ -197,7 +197,7 @@ class MipTreeNode(mcts.TreeNode):
             else:
                 value = int(math.floor(value))
             node.apply((vdata, value))
-        return mcts.Solution(obj=node.upper_bound, data=node.fixed())
+        return mcts.Solution(value=node.upper_bound, data=node.fixed())
 
     def bound(self):
         return self.lower_bound
@@ -252,7 +252,7 @@ def main(instance, niter, seed):
     root = MipTreeNode.root(instance)
     sols = mcts.run(root, iter_limit=niter, rng_seed=seed)
     info("solutions found: {}".format(sols))
-    info("best found objective: {}".format(sols.best.obj))
+    info("best found objective: {}".format(sols.best.value))
     if sols.best.is_feas:
         info("best solution (non-zeros):")
         for var, val in sols.best.data.items():

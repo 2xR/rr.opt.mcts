@@ -117,7 +117,7 @@ class KnapsackTreeNode(mcts.TreeNode):
         node = self.copy()
         while len(node.items_left) > 0:
             node.apply(random.choice([True, False]))  # monte carlo simulation
-        sol = mcts.Solution(obj=(node.total_value * -1))  # flip objective function
+        sol = mcts.Solution(value=(node.total_value * -1))  # flip objective function
         sol.items_packed = node.items_packed
         return sol
 

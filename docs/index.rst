@@ -13,3 +13,7 @@ This document explains how to use the ``rr.opt.mcts.basic`` library (version |ve
 
    introduction
    using
+
+..
+   knapspack
+   gurobi

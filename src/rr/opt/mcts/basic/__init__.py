@@ -59,19 +59,19 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
                 info("Search complete, solution is optimal")
                 sols.best.is_opt = True
                 break  # tree exhausted
-            children = node.expand(pruning=pruning, cutoff=sols.best.obj)  # expansion step
+            children = node.expand(pruning=pruning, cutoff=sols.best.value)  # expansion step
             if len(children) == 0:
                 node.delete()
             else:
-                z0 = sols.best.obj
+                z0 = sols.best.value
                 for child in children:
                     sol = child.simulate()  # simulation step
                     child.backpropagate(sol)  # backpropagation step
                     sols.update(sol)
                 # prune only once after all child solutions have been accounted for
-                if pruning and sols.best.obj < z0:
+                if pruning and sols.best.value < z0:
                     ts0 = root.tree_size()
-                    root.prune(sols.best.obj)
+                    root.prune(sols.best.value)
                     ts1 = root.tree_size()
                     info("Pruning removed {} nodes ({} => {})".format(ts0 - ts1, ts0, ts1))
             # update elapsed time and iteration counter
@@ -86,51 +86,70 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
 class Infeasible(object):
     """
     Infeasible objects can be compared with other objects (such as floats), but always compare as
-    greater (i.e. worse in a minimization sense) than those objects. Among infeasible objects,
-    they compare by value, meaning that there can be different degrees of infeasibility.
+    greater (*i.e.* worse in a minimization sense) than those objects. Among infeasible objects,
+    they compare by value, meaning that they can be used to represent different degrees of
+    infeasibility.
+
+    To inform the MCTS framework that a solution is infeasible, set an :class:`Infeasible` object
+    as the solution's ``value`` attribute, like so:
+
+    .. code-block:: python
+
+        class MyNode(mcts.TreeNode):
+            # (...)
+
+            def simulate(self):
+                # (...)
+                infeas = len(self.unassigned_vars)
+                if infeas > 0:
+                    return mcts.Solution(value=mcts.Infeasible(infeas))
+                # (...)
+
+            # (...)
     """
-    def __init__(self, value=+INF):
-        self.value = value
+    def __init__(self, infeas=+INF):
+        self.infeas = infeas
 
     def __str__(self):
-        return "{}({})".format(type(self).__name__, self.value)
+        return "{}({})".format(type(self).__name__, self.infeas)
 
     def __repr__(self):
         return "<{} @{:x}>".format(self, id(self))
 
     def __eq__(self, obj):
-        return isinstance(obj, Infeasible) and self.value == obj.value
+        return isinstance(obj, Infeasible) and self.infeas == obj.infeas
 
     def __ne__(self, obj):
-        return not isinstance(obj, Infeasible) or self.value != obj.value
+        return not isinstance(obj, Infeasible) or self.infeas != obj.infeas
 
     def __gt__(self, obj):
-        return not isinstance(obj, Infeasible) or self.value > obj.value
+        return not isinstance(obj, Infeasible) or self.infeas > obj.infeas
 
     def __ge__(self, obj):
-        return not isinstance(obj, Infeasible) or self.value >= obj.value
+        return not isinstance(obj, Infeasible) or self.infeas >= obj.infeas
 
     def __lt__(self, obj):
-        return isinstance(obj, Infeasible) and self.value < obj.value
+        return isinstance(obj, Infeasible) and self.infeas < obj.infeas
 
     def __le__(self, obj):
-        return isinstance(obj, Infeasible) and self.value <= obj.value
+        return isinstance(obj, Infeasible) and self.infeas <= obj.infeas
 
 
 class Solution(object):
-    """Base class for solution objects. The simulate() method of TreeNode objects should return
-    a Solution object.
+    """Base class for solution objects. The :meth:`simulate` method of :class:`TreeNode` objects
+    should return a :class:`Solution` object. Solutions can have solution data attached, but this
+    is optional. The solution's value, however, is required.
     """
-    def __init__(self, obj, data=None):
-        assert obj is not None
-        self.obj = obj  # objective function value (may be an Infeasible object)
+    def __init__(self, value, data=None):
+        assert value is not None
+        self.value = value  # objective function value (may be an Infeasible object)
         self.data = data  # solution data
-        self.is_infeas = isinstance(obj, Infeasible)  # infeasible solution flag
+        self.is_infeas = isinstance(value, Infeasible)  # infeasible solution flag
         self.is_feas = not self.is_infeas  # feasible solution flag
         self.is_opt = False  # optimal solution flag ("manually" set by run())
 
     def __str__(self):
-        return "{}(obj={}{})".format(type(self).__name__, self.obj, "*" if self.is_opt else "")
+        return "{}(value={}{})".format(type(self).__name__, self.value, "*" if self.is_opt else "")
 
     def __repr__(self):
         return "<{} @{:x}>".format(self, id(self))
@@ -142,10 +161,10 @@ class Solutions(object):
     better solutions found during the search.
     """
     # Initial values for attributes of Solutions object.
-    INIT_FEAS_BEST = Solution(obj=+INF, data="<initial best feas solution>")
-    INIT_FEAS_WORST = Solution(obj=-INF, data="<initial worst feas solution>")
-    INIT_INFEAS_BEST = Solution(obj=Infeasible(+INF), data="<initial best infeas solution>")
-    INIT_INFEAS_WORST = Solution(obj=Infeasible(-INF), data="<initial worst infeas solution>")
+    INIT_FEAS_BEST = Solution(value=+INF, data="<initial best feas solution>")
+    INIT_FEAS_WORST = Solution(value=-INF, data="<initial worst feas solution>")
+    INIT_INFEAS_BEST = Solution(value=Infeasible(+INF), data="<initial best infeas solution>")
+    INIT_INFEAS_WORST = Solution(value=Infeasible(-INF), data="<initial worst infeas solution>")
 
     def __init__(self, *sols):
         self.list = []  # Solution list
@@ -159,7 +178,7 @@ class Solutions(object):
 
     def __str__(self):
         attrs = ["feas_best", "feas_worst", "infeas_best", "infeas_worst"]
-        descr = ", ".join("{}={}".format(attr, getattr(self, attr).obj) for attr in attrs)
+        descr = ", ".join("{}={}".format(attr, getattr(self, attr).value) for attr in attrs)
         return "{}({})".format(type(self).__name__, descr)
 
     def __repr__(self):
@@ -168,22 +187,22 @@ class Solutions(object):
     def update(self, sol):
         # Update best and worst feasible solutions
         if sol.is_feas:
-            if sol.obj < self.feas_best.obj:
+            if sol.value < self.feas_best.value:
                 debug("New best feasible solution: {} -> {}".format(self.feas_best, sol))
                 self.feas_best = sol
-            if sol.obj > self.feas_worst.obj:
+            if sol.value > self.feas_worst.value:
                 debug("New worst feasible solution: {} -> {}".format(self.feas_worst, sol))
                 self.feas_worst = sol
         # Update best and worst infeasible solutions
         else:
-            if sol.obj < self.infeas_best.obj:
+            if sol.value < self.infeas_best.value:
                 debug("New best infeasible solution: {} -> {}".format(self.infeas_best, sol))
                 self.infeas_best = sol
-            if sol.obj > self.infeas_worst.obj:
+            if sol.value > self.infeas_worst.value:
                 debug("New worst infeasible solution: {} -> {}".format(self.infeas_worst, sol))
                 self.infeas_worst = sol
         # Update best overall solution
-        if sol.obj < self.best.obj:
+        if sol.value < self.best.value:
             info("New best solution: {} -> {}".format(self.best, sol))
             self.best = sol
             self.list.append(sol)
@@ -191,23 +210,31 @@ class Solutions(object):
 
 class TreeNode(object):
     """Base class for tree nodes. Subclasses should define:
-        - tree management methods - root() [class method]; copy(); apply(); branches()
-        - MCTS-related methods - simulate()
-        - branch-and-bound methods - bound() [optional]
+
+    :tree management methods:
+        - :meth:`root`
+        - :meth:`copy`
+        - :meth:`branches`
+        - :meth:`apply`
+    :MCTS-related methods:
+        - :meth:`simulate`
+    :branch-and-bound related methods:
+        - :meth:`bound` *[optional]*
     """
 
     @classmethod
     def root(cls, instance):
         """Given a problem instance, create the root node for the associated search tree.
 
-        This is almost completely problem-specific. Normally this method should create an empty
-        node using ``root = cls()`` and then proceed to add attributes necessary to fully
-        represent a node in the tree.
+        Normally this method should create an empty node using ``root = cls()`` and then proceed
+        to add the attributes necessary to fully represent a node in the tree.
 
-        Arguments:
+        Parameters:
             instance: an object representing an instance of a specific problem. For example, for
-                the knapsack problem, an instance would contain a list of item weights, list of
-                item values, and the knapsack's capacity.
+                the knapsack problem, an instance would contain a list of item weights, a list of
+                item values, and the knapsack's capacity. This could be a 3-tuple, a namedtuple,
+                or even an instance of a custom class. The internal structure of the instance
+                object is not dictated by the framework.
 
         Returns:
             TreeNode: the root of the search tree for the argument instance.
@@ -253,42 +280,52 @@ class TreeNode(object):
         self.children.remove(node)
 
     # Tree management abstract methods
+    # --------------------------------
     def copy(self):
         """Create a new node representing a copy of the node's state.
 
         This method should start by creating a new "blank" node using ``clone = type(self)()``,
         which takes care of initializing generic MCTS node attributes, and then fill in the
-        domain-specific data by copying the custom attributes that were previously defined in
-        :meth:`root`.
+        domain-specific data by shallow- or deep-copying the custom attributes that were
+        previously defined in :meth:`root`. Note that some attributes should be unique for each
+        node (hence copied deeply), while others can (and should, if possible) be shared among
+        all nodes. This should be analyzed on a case-by-case basis.
 
         Returns:
-            TreeNode: the clone of the current node.
+            TreeNode: a clone of the current node.
+        """
+        raise NotImplementedError()
+
+    def branches(self):
+        """Generate a collection of branch objects that are available from the current node.
+
+        This method should produce a collection (*e.g* list, tuple, set, generator) of branch
+        objects. A branch object is an object (of any type, and with any internal structure)
+        which carries enough information to apply a modification (through :meth:`apply`) to a
+        copy of the current node and obtain one of its child nodes. In some cases, a branch
+        object may be something as simple as a boolean value (see *e.g.* the knapsack example).
+
+        Returns:
+            collection of branch objects.
         """
         raise NotImplementedError()
 
     def apply(self, branch):
         """Mutate the node's state by applying a branch (as produced by :meth:`branches`).
 
-        This is domain-specific, and depends on the structure of the node and the branch data that
-        is returned by :meth:`branches`.
+        The logic in this method is highly dependent on the internal structure of the nodes and
+        branch objects that are returned by :meth:`branches`.
 
-        Arguments:
-            branch: problem-dependent object which should contain enough information to modify the
-                current node such that it represents descending one level in the tree by following
-                the argument branch.
-        """
-        raise NotImplementedError()
+        Note:
+            This method should operate in-place on the node. The :meth:`expand` method will take
+            care of creating copies of the current node and calling :meth:`apply` on the copies,
+            passing each branch object returned by :meth:`branches` and thereby generating the
+            list of the current node's children.
 
-    def branches(self):
-        """Produce a list of possible actions that could be applied to the current node.
-
-        This method should produce a list of branch objects. A branch object is an object (of any
-        type) which carries enough information to apply a modification (through :meth:`apply`) to
-        the current node and obtain one of its child nodes. In some cases, a branch object may be
-        something as simple as a boolean value (see *e.g.* the knapsack example).
-
-        Returns:
-            iterable of branch objects.
+        Parameters:
+            branch: an object which should contain enough information to apply a local
+                modification to (a copy of) the current node, such that the end result represents
+                descending one level in the tree.
         """
         raise NotImplementedError()
 
@@ -320,12 +357,12 @@ class TreeNode(object):
         adapted to the optimization context, where there is no concept of win ratio.
         """
         if self.sim_best.is_feas:
-            z_node = self.sim_best.obj
-            z_best, z_worst = sols.feas_best.obj, sols.feas_worst.obj
+            z_node = self.sim_best.value
+            z_best, z_worst = sols.feas_best.value, sols.feas_worst.value
             exploit_min, exploit_max = 0.5, 1.0  # TODO: remove hard-coded magic numbers
         else:
-            z_node = self.sim_best.obj.value
-            z_best, z_worst = sols.infeas_best.obj.value, sols.infeas_worst.obj.value
+            z_node = self.sim_best.value.infeas
+            z_best, z_worst = sols.infeas_best.value.infeas, sols.infeas_worst.value.infeas
             exploit_min, exploit_max = 0.0, 0.25  # TODO: remove hard-coded magic numbers
         if z_best == z_worst:
             raw_exploit = 0.0
@@ -349,7 +386,23 @@ class TreeNode(object):
         return self.children
 
     def simulate(self):
-        """Run a randomized simulation from this node to completion or infeasibility."""
+        """Run a simulation from the current node to completion or infeasibility.
+
+        This method defines the simulation strategy that is used to obtain node value estimates
+        in MCTS. It should quickly descend the tree until a leaf node (solution or infeasibility)
+        is reached, and return the result encountered.
+
+        Smarter simulation strategies incorporate more domain-specific knowledge and normally use
+        more computational resources, but can dramatically improve the performance of the
+        algorithm. However, if the computational cost is too high, MCTS may be unable to gather
+        enough data to improve the accuracy of its node value estimates, and will therefore end
+        up wasting time in uninteresting regions. For best results, a balance between these
+        conflicting goals must be reached.
+
+        Returns:
+            Solution: object containing the objective function value (or an :class:`Infeasible`
+            value) and *optional* solution data.
+        """
         raise NotImplementedError()
 
     def backpropagate(self, sol):
@@ -363,7 +416,7 @@ class TreeNode(object):
         self.sim_best = sol
         for ancestor in self.path:
             ancestor.sim_count += 1
-            if ancestor.sim_best.obj > sol.obj:
+            if ancestor.sim_best.value > sol.value:
                 ancestor.sim_best = sol
 
     def delete(self):
@@ -389,7 +442,7 @@ class TreeNode(object):
                     # New ancestor sim_best is the best of children's sim_best or its own sim_sol.
                     candidates = [child.sim_best for child in ancestor.children]
                     candidates.append(ancestor.sim_sol)
-                    ancestor.sim_best = min(candidates, key=lambda s: s.obj)
+                    ancestor.sim_best = min(candidates, key=lambda s: s.value)
             # Propagate deletion to parent if it exists and has become empty, otherwise stop.
             if parent is None or len(parent.children) > 0:
                 break
@@ -411,15 +464,14 @@ class TreeNode(object):
     def bound(self):
         """Compute a lower bound on the current subtree's optimal objective value.
 
-        A bound() method shoud be defined in subclasses wanting to use pruning. By default,
-        pruning will be automatically activated if the root node's class defines a callable
-        named 'bound()'.
-        The bound() method should compute a lower bound on the optimal objective function
-        value in the subtree under self.
-        NOTE: in the base TreeNode class, 'bound' is not defined as a regular abstract method
-        like e.g. branches() because the mcts.run() function detects that the root node class
-        defines a bound() method using 'callable(type(root).bound)'. This should work correctly
-        across Python 2 & 3."""
+        A :meth:`bound` method shoud be defined in subclasses intending to use pruning. By
+        default, pruning will be automatically activated if the root node defines a :meth:`bound`
+        method different from the one defined in the base :class:`TreeNode` class.
+
+        Returns:
+            a lower bound on the optimal objective function value in the subtree under the
+            current node.
+        """
         raise NotImplementedError()
 
 
