@@ -88,8 +88,8 @@ Once a custom :class:`TreeNode` class has been defined, MCTS can be run as in th
 Limitations
 -----------
 
-#. the implementation can only deal with minimization problems. This is simple to work around however: simply multiply all objective function and bound values by -1.
-#. all child nodes are created in one iteration. This may lead to a large waste of computational resources running simulations on uninteresting nodes.
+#. The implementation can only deal with minimization problems. This is simple to work around however: simply multiply all objective function and bound values by -1.
+#. All child nodes are created in one iteration. This may lead to a large waste of computational resources running simulations on uninteresting nodes.
 #. Does not yet stop early if the bound and incumbent are equal (should add this).
 
 .. rubric:: Footnotes
