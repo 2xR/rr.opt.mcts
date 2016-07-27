@@ -83,6 +83,10 @@ Once a custom :class:`TreeNode` class has been defined, MCTS can be run as in th
         print(sols.best.data)  # solution data
         print(sols.best.is_opt)  # boolean indicating whether the best solution found is optimal
 
+The parameters and return value of the :func:`rr.opt.mcts.basic.run` function are documented below:
+
+.. autofunction:: run
+
 
 
 Limitations

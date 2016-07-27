@@ -76,4 +76,3 @@ In the knapsack example, we compute a simple yet tight bound that is equivalent 
 
 .. literalinclude:: ../src/rr/opt/mcts/basic/examples/knapsack.py
     :pyobject: KnapsackTreeNode.bound
-

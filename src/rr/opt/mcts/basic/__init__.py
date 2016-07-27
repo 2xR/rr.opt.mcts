@@ -24,8 +24,25 @@ warn = logger.warn
 def run(root, time_limit=INF, iter_limit=INF, pruning=None,
         rng_seed=None, rng_state=None, log_iter_interval=1000):
     """
-    Monte Carlo Tree Search for **minimization** problems. Objective functions (and bounds) for
-    maximization problems must be multiplied by -1.
+    Monte Carlo Tree Search for **minimization** problems.
+
+    Note:
+        Objective functions (and bounds) for maximization problems must be multiplied by -1.
+
+    Arguments:
+        root (TreeNode): the root of the search tree.
+        time_limit (float): maximum CPU time allowed.
+        iter_limit (int): maximum number of iterations.
+        pruning (bool or None): make the search use/not use pruning if true/false. If `None` is
+            given (default), auto-detects pruning settings from root node.
+        rng_seed: an object to pass to `random.seed()`. Does not seed the RNG if no value is given.
+        rng_state: an RNG state tuple, as obtained from `random.getstate()`. Can be used to set a
+            particular RNG state at the start of the search.
+        log_iter_interval (int): interval, in number of iterations, between automatic log messages.
+
+    Returns:
+        `Solutions` object containing the best solution found by the search, as well as the list
+        of incumbent solutions during the search.
     """
     if pruning is None:
         # Guess pruning by comparing the root node's bound() method with the bound() method from
