@@ -1,13 +1,19 @@
 from setuptools import setup, find_packages
 import pkgutil
 
+import sys
+import os
+
+here = os.path.dirname(os.path.abspath(__file__))
+src = os.path.join(here, "src")
+sys.path.insert(0, src)
 
 with open("README.rst", "rt") as readme_file:
     readme = readme_file.read()
 
 setup(
     name="rr.opt.mcts.basic",
-    version=pkgutil.get_data("rr.opt.mcts.basic", "VERSION").decode("utf-8").strip(),
+    version=pkgutil.get_data("rr.opt.mcts", "basic/VERSION").decode("utf-8").strip(),
     description="Simple implementation of Monte Carlo tree search.",
     long_description=readme,
     url="https://github.com/2xR/rr.opt.mcts.basic",
