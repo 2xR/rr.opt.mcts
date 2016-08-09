@@ -137,7 +137,7 @@ class MipTreeNode(mcts.TreeNode):
         ])
 
     def copy(self):
-        clone = type(self)()
+        clone = mcts.TreeNode.copy(self)
         # global data (shallow-copied)
         clone.model = self.model
         # local data (which must be copied)

@@ -301,8 +301,8 @@ class TreeNode(object):
     def copy(self):
         """Create a new node representing a copy of the node's state.
 
-        This method should start by creating a new "blank" node using ``clone = type(self)()``,
-        which takes care of initializing generic MCTS node attributes, and then fill in the
+        This method should create a new "blank" node using ``clone = TreeNode.copy(self)``,
+        which takes care of copying generic MCTS node attributes, and should then fill in the
         domain-specific data by shallow- or deep-copying the custom attributes that were
         previously defined in :meth:`root`. Note that some attributes should be unique for each
         node (hence copied deeply), while others can (and should, if possible) be shared among
@@ -311,7 +311,10 @@ class TreeNode(object):
         Returns:
             TreeNode: a clone of the current node.
         """
-        raise NotImplementedError()
+        cls = type(self)
+        clone = cls.__new__(cls)
+        TreeNode.__init__(clone)
+        return clone
 
     def branches(self):
         """Generate a collection of branch objects that are available from the current node.

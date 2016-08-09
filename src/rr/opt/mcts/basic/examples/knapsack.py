@@ -84,7 +84,7 @@ class KnapsackTreeNode(mcts.TreeNode):
         return root
 
     def copy(self):
-        clone = type(self)()
+        clone = mcts.TreeNode.copy(self)
         clone.items_left = list(self.items_left)
         clone.items_packed = list(self.items_packed)
         clone.capacity_required = self.capacity_required
