@@ -370,6 +370,12 @@ class TreeNode(object):
                 node = cands[0] if len(cands) == 1 else random.choice(cands)
         return node
 
+    # Parameters controlling the maximum exploitation score an infeasible solution can get and
+    # the minimum exploitation score a feasible solution is guaranteed to have. See the
+    # selection_score() method for more details.
+    INFEAS_MAX_EXPLOIT = 0.5
+    FEAS_MIN_EXPLOIT = 0.5
+
     def selection_score(self, sols):
         """Selection score uses an adapted UTC formula to balance exploration and exploitation.
 
@@ -378,18 +384,22 @@ class TreeNode(object):
         """
         if self.sim_best.is_feas:
             z_node = self.sim_best.value
-            z_best, z_worst = sols.feas_best.value, sols.feas_worst.value
-            exploit_min, exploit_max = 0.5, 1.0  # TODO: remove hard-coded magic numbers
+            z_best = sols.feas_best.value
+            z_worst = sols.feas_worst.value
+            min_exploit = self.FEAS_MIN_EXPLOIT
+            max_exploit = 1.0
         else:
             z_node = self.sim_best.value.infeas
-            z_best, z_worst = sols.infeas_best.value.infeas, sols.infeas_worst.value.infeas
-            exploit_min, exploit_max = 0.0, 0.25  # TODO: remove hard-coded magic numbers
+            z_best = sols.infeas_best.value.infeas
+            z_worst = sols.infeas_worst.value.infeas
+            min_exploit = 0.0
+            max_exploit = self.INFEAS_MAX_EXPLOIT
         if z_best == z_worst:
             raw_exploit = 0.0
         else:
             raw_exploit = (z_worst - z_node) / (z_worst - z_best)
             assert 0.0 <= raw_exploit <= 1.0
-        exploit = exploit_min + raw_exploit * (exploit_max - exploit_min)
+        exploit = min_exploit + raw_exploit * (max_exploit - min_exploit)
         explore = sqrt(2.0 * log(self.parent.sim_count) / self.sim_count)
         return exploit + explore
 
