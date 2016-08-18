@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from future.builtins import object
+from future.builtins import object, next, range
 
 import logging
 import logging.config
@@ -54,14 +54,13 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
         random.seed(rng_seed)
     if rng_state is not None:
         random.setstate(rng_state)
-    info("RNG initial state is {}.".format(random.getstate()))
     info("Pruning is {}.".format("enabled" if pruning else "disabled"))
 
     t0 = time.clock()  # initial cpu time
     sols = Solutions()  # object used to keep track of our best/worst solutions
-    sol = root.simulate()  # run simulation and
-    root.backpropagate(sol)  # backpropagation on root node
-    sols.update(sol)  # update solutions with root sol
+    for sol in root.simulations():  # run simulations from root and
+        root.backpropagate(sol)  # backpropagate the solutions
+        sols.update(sol)
     t = time.clock() - t0  # cpu time elapsed
     i = 0  # iteration count
 
@@ -76,15 +75,16 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
                 info("Search complete, solution is optimal")
                 sols.best.is_opt = True
                 break  # tree exhausted
-            children = node.expand(pruning=pruning, cutoff=sols.best.value)  # expansion step
-            if len(children) == 0:
+            new_children = node.expand(pruning=pruning, cutoff=sols.best.value)  # expansion step
+            if len(new_children) == 0 and node.is_exhausted:
                 node.delete()
             else:
                 z0 = sols.best.value
-                for child in children:
-                    sol = child.simulate()  # simulation step
-                    child.backpropagate(sol)  # backpropagation step
-                    sols.update(sol)
+                for child in new_children:
+                    for sol in child.simulations():  # simulation step
+                        child.backpropagate(sol)  # backpropagation step
+                        sols.update(sol)
+                    assert child.sim_count > 0
                 # prune only once after all child solutions have been accounted for
                 if pruning and sols.best.value < z0:
                     ts0 = root.tree_size()
@@ -225,6 +225,43 @@ class Solutions(object):
             self.list.append(sol)
 
 
+class TreeNodeExpander(object):
+    """Lazy generator of child nodes.
+
+    This object creates a copy of a given parent node and applies the next (unexpanded) branch in
+    its branch list on demand. When the parent node has been completely expanded, the 'next()'
+    method will return None and the 'is_finished' flag is set to true.
+    """
+    def __init__(self, node):
+        self.node = node
+        self.branches = None
+        self.next_branch = None
+        self.is_started = False
+        self.is_finished = False
+
+    def start(self):
+        if self.is_started:
+            raise ValueError("multiple attempts to start node expander")
+        self.branches = iter(self.node.branches())
+        self.is_started = True
+        self._advance_branch()
+
+    def next(self):
+        if self.is_finished:
+            raise ValueError("node expansion is already finished")
+        child = self.node.copy()
+        child.apply(self.next_branch)
+        self._advance_branch()
+        return child
+
+    def _advance_branch(self):
+        try:
+            self.next_branch = next(self.branches)
+        except StopIteration:
+            self.next_branch = None
+            self.is_finished = True
+
+
 class TreeNode(object):
     """Base class for tree nodes. Subclasses should define:
 
@@ -259,40 +296,42 @@ class TreeNode(object):
         raise NotImplementedError()
 
     def __init__(self):
-        self.path = []  # path from root down to, but excluding, 'self' (i.e. top-down ancestors)
+        self.path = ()  # path from root down to, but excluding, 'self' (i.e. top-down ancestors)
         self.parent = None  # reference to parent node
         self.children = None  # list of child nodes (when expanded)
+        self.expander = TreeNodeExpander(self)  # lazy child node generator
         self.sim_count = 0  # number of simulations in this subtree
         self.sim_sol = None  # solution of this node's own simulation
         self.sim_best = None  # best solution of simulations in this subtree
 
     @property
     def is_expanded(self):
-        """The 'children' attribute only becomes a list when the expand() method is called."""
-        return self.children is not None
+        """True iff the node's expansion has finished."""
+        return self.expander.is_finished
 
     @property
     def is_exhausted(self):
-        """A node is exhausted if all its children have been completely explored and removed."""
-        return self.children is not None and len(self.children) == 0
+        """True iff the node is fully expanded and all its children were removed from the tree."""
+        return self.is_expanded and len(self.children) == 0
 
     def tree_size(self):
         stack = [self]
         count = 1
         while len(stack) > 0:
             node = stack.pop()
-            if node.is_expanded:
-                count += len(node.children)
-                stack.extend(node.children)
+            children = node.children
+            if children is not None:
+                stack.extend(children)
+                count += len(children)
         return count
 
     def add_child(self, node):
-        node.path = self.path + [self]
+        node.path = self.path + (self,)
         node.parent = self
         self.children.append(node)
 
     def remove_child(self, node):
-        node.path = []
+        node.path = ()
         node.parent = None
         self.children.remove(node)
 
@@ -403,17 +442,45 @@ class TreeNode(object):
         explore = sqrt(2.0 * log(self.parent.sim_count) / self.sim_count)
         return exploit + explore
 
+    # Parameter controlling how many child nodes (at most) are created during each iteration. The
+    # default value is 1, which means that nodes are expanded one child at a time. This allows
+    # the algorithm to pick other sites for exploration if the initial children of the current
+    # node reveal it to be a bad choice.
+    EXPANSION_LIMIT = 1
+
     def expand(self, pruning, cutoff):
-        """Generate and link all children of this node."""
-        assert self.children is None
-        self.children = []
-        for branch in self.branches():
-            child = self.copy()
-            child.apply(branch)
+        """Generate and link the children of this node.
+
+        Note:
+            The current implementation only creates at most 'EXPANSION_LIMIT' nodes.
+
+        Returns:
+            A list of newly created child nodes.
+        """
+        expander = self.expander
+        if not expander.is_started:
+            assert self.children is None
+            self.children = []
+            expander.start()
+        new_children = []
+        for _ in range(self.EXPANSION_LIMIT):
+            if expander.is_finished:
+                break
+            child = expander.next()
             if pruning and child.bound() >= cutoff:
                 continue
             self.add_child(child)
-        return self.children
+            new_children.append(child)
+        return new_children
+
+    # Parameter controlling how many simulations per newly created node are run. This is used by
+    # the 'simulations()' method below. However, that method can even do something more
+    # sophisticated like dynamically determining if it is worth it to run extra simulations.
+    SIMULATION_LIMIT = 1
+
+    def simulations(self):
+        for _ in range(self.SIMULATION_LIMIT):
+            yield self.simulate()
 
     def simulate(self):
         """Run a simulation from the current node to completion or infeasibility.
