@@ -9,7 +9,6 @@ import logging.config
 import pkgutil
 import random
 import time
-import types
 from math import log, sqrt
 
 
@@ -45,10 +44,9 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
         of incumbent solutions during the search.
     """
     if pruning is None:
-        # Guess pruning by comparing the root node's bound() method with the bound() method from
-        # the base TreeNode class.
-        original_bound_meth = types.MethodType(TreeNode.bound, root)
-        pruning = root.bound != original_bound_meth
+        # Guess pruning by comparing the bound() method from the root node's class with the
+        # bound() method from the base TreeNode class.
+        pruning = type(root).bound != TreeNode.bound
     if rng_seed is not None:
         info("Seeding RNG with {}...".format(rng_seed))
         random.seed(rng_seed)
