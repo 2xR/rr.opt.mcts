@@ -223,7 +223,7 @@ class Solutions(object):
             self.list.append(sol)
 
 
-class TreeNodeExpander(object):
+class TreeNodeExpansion(object):
     """Lazy generator of child nodes.
 
     This object creates a copy of a given parent node and applies the next (unexpanded) branch in
@@ -239,7 +239,7 @@ class TreeNodeExpander(object):
 
     def start(self):
         if self.is_started:
-            raise ValueError("multiple attempts to start node expander")
+            raise ValueError("multiple attempts to start node expansion")
         self.branches = iter(self.node.branches())
         self.is_started = True
         self._advance_branch()
@@ -260,6 +260,28 @@ class TreeNodeExpander(object):
             self.is_finished = True
 
 
+class TreeNodeStats(object):
+    def __init__(self, node):
+        self.node = node
+        self.visits = 0
+        self.sim_best = None
+        self.sim_sol = None
+
+    def add_visits(self, n):
+        self.visits += n
+        for ancestor in self.node.path:
+            ancestor.stats.visits += n
+
+    def include_node_solution(self, sol):
+        pass
+
+    def include_descendant_solution(self, sol):
+        pass
+
+    def exclude_descendant_solution(self, sol):
+        pass
+
+
 class TreeNode(object):
     """Base class for tree nodes. Subclasses should define:
 
@@ -273,6 +295,9 @@ class TreeNode(object):
     :branch-and-bound related methods:
         - :meth:`bound` *[optional]*
     """
+
+    Expansion = TreeNodeExpansion
+    Stats = TreeNodeStats
 
     @classmethod
     def root(cls, instance):
@@ -294,10 +319,13 @@ class TreeNode(object):
         raise NotImplementedError()
 
     def __init__(self):
+        cls = type(self)
         self.path = ()  # path from root down to, but excluding, 'self' (i.e. top-down ancestors)
         self.parent = None  # reference to parent node
         self.children = None  # list of child nodes (when expanded)
-        self.expander = TreeNodeExpander(self)  # lazy child node generator
+        self.expansion = cls.Expansion(self)  # child node generator
+
+        # self.stats = cls.Stats(self)  # node statistics
         self.sim_count = 0  # number of simulations in this subtree
         self.sim_sol = None  # solution of this node's own simulation
         self.sim_best = None  # best solution of simulations in this subtree
@@ -305,7 +333,7 @@ class TreeNode(object):
     @property
     def is_expanded(self):
         """True iff the node's expansion has finished."""
-        return self.expander.is_finished
+        return self.expansion.is_finished
 
     @property
     def is_exhausted(self):
@@ -455,16 +483,16 @@ class TreeNode(object):
         Returns:
             A list of newly created child nodes.
         """
-        expander = self.expander
-        if not expander.is_started:
+        expansion = self.expansion
+        if not expansion.is_started:
             assert self.children is None
             self.children = []
-            expander.start()
+            expansion.start()
         new_children = []
         for _ in range(self.EXPANSION_LIMIT):
-            if expander.is_finished:
+            if expansion.is_finished:
                 break
-            child = expander.next()
+            child = expansion.next()
             if pruning and child.bound() >= cutoff:
                 continue
             self.add_child(child)

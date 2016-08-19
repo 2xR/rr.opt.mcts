@@ -66,7 +66,7 @@ def verify_instance(instance, *args, **kwargs):
     mcts.config_logging(level="DEBUG")
     root = KnapsackTreeNode.root([items, capacity])
     sols = mcts.run(root, *args, **kwargs)
-    assert set(sols.best.items_packed) == optimum
+    assert set(sols.best.data) == optimum
     assert root.is_exhausted
 
 
@@ -117,9 +117,10 @@ class KnapsackTreeNode(mcts.TreeNode):
         node = self.copy()
         while len(node.items_left) > 0:
             node.apply(random.choice([True, False]))  # monte carlo simulation
-        sol = mcts.Solution(value=(node.total_value * -1))  # flip objective function
-        sol.items_packed = node.items_packed
-        return sol
+        return mcts.Solution(
+            value=(node.total_value * -1),  # flip objective function
+            data=node.items_packed,
+        )
 
     def bound(self):
         if self.upper_bound is None:
