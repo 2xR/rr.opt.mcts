@@ -44,7 +44,7 @@ Problem-specific node attributes should not be added in the regular Python objec
             return root
 
         def copy(self):
-            clone = type(self)()
+            clone = mcts.TreeNode.copy(self)
             clone.instance = self.instance
             clone.shared_state = self.shared_state
             clone.bar = self.bar
@@ -71,7 +71,7 @@ Once a custom :class:`TreeNode` class has been defined, MCTS can be run as in th
     import myproblem
 
     instance = myproblem.load("./instance_01.json")
-    root = myproblem.Node.root(instance)
+    root = myproblem.TreeNode.root(instance)
     sols = mcts.run(
         root=root,
         iter_limit=1e10,
@@ -89,12 +89,11 @@ The parameters and return value of the :func:`rr.opt.mcts.basic.run` function ar
 
 
 
-Limitations
------------
+Caveat: solving maximization problems
+-------------------------------------
 
-#. The implementation can only deal with minimization problems. This is simple to work around however: simply multiply all objective function and bound values by -1.
-#. All child nodes are created in one iteration. This may lead to a large waste of computational resources running simulations on uninteresting nodes.
-#. Does not yet stop early if the bound and incumbent are equal (should add this).
+It should be noted that this simple MCTS implementation can only deal with minimization problems. However, it is easy to work around this limitation and deal with maximization problems by multiplying all objective function and bound values by :math:`-1` (see, *e.g.* the :doc:`Knapsack example <./knapsack>`).
+
 
 .. rubric:: Footnotes
 
