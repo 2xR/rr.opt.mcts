@@ -1,19 +1,23 @@
+import re
+
 from setuptools import setup, find_packages
-import pkgutil
 
-import sys
-import os
-
-here = os.path.dirname(os.path.abspath(__file__))
-src = os.path.join(here, "src")
-sys.path.insert(0, src)
 
 with open("README.rst", "rt") as readme_file:
     readme = readme_file.read()
 
+# Extract version information directly from the source code.
+with open("src/rr/opt/mcts/basic/__init__.py", "rt") as source_file:
+    source = source_file.read()
+match = re.search(r"__version__\s*=\s*(['\"])(\d+(\.\d+){2}([-+]?\w+)*)\1", source)
+if match is None:
+    raise Exception("unable to extract version from {}".format(source_file.name))
+version = match.group(2)
+
+
 setup(
     name="rr.opt.mcts.basic",
-    version=pkgutil.get_data("rr.opt.mcts", "basic/VERSION").decode("utf-8").strip(),
+    version=version,
     description="Simple implementation of Monte Carlo tree search.",
     long_description=readme,
     url="https://github.com/2xR/rr.opt.mcts.basic",
@@ -31,6 +35,5 @@ setup(
     ],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    package_data={"": ["LICENSE", "VERSION"]},
     install_requires=["future~=0.15.2"],
 )

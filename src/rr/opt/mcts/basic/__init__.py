@@ -6,13 +6,17 @@ from future.builtins import object, next, range
 
 import logging
 import logging.config
-import pkgutil
 import random
 import time
 from math import log, sqrt
 
 
-__version__ = pkgutil.get_data(__name__, "VERSION").decode("utf-8").strip()
+__version__ = "0.1.1"
+__author__ = "Rui Rei"
+__copyright__ = "Copyright 2016 {author}".format(author=__author__)
+__license__ = "MIT"
+
+
 INF = float("inf")
 logger = logging.getLogger(__name__)
 debug = logger.debug
