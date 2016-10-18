@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future.builtins import object, next, range
 
+import itertools
 import logging
 import logging.config
 import random
@@ -60,9 +61,9 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
 
     t0 = time.clock()  # initial cpu time
     sols = Solutions()  # object used to keep track of our best/worst solutions
-    for sol in root.simulations():  # run simulations from root and
-        root.backpropagate(sol)  # backpropagate the solutions
-        sols.update(sol)
+    sol = root.simulate()  # run simulation from root and
+    root.backpropagate(sol)  # backpropagate the solution
+    sols.update(sol)
     t = time.clock() - t0  # cpu time elapsed
     i = 0  # iteration count
 
@@ -83,9 +84,9 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
             else:
                 z0 = sols.best.value
                 for child in new_children:
-                    for sol in child.simulations():  # simulation step
-                        child.backpropagate(sol)  # backpropagation step
-                        sols.update(sol)
+                    sol = child.simulate()  # simulation step
+                    child.backpropagate(sol)  # backpropagation step
+                    sols.update(sol)
                     assert child.sim_count > 0
                 # prune only once after all child solutions have been accounted for
                 if pruning and sols.best.value < z0:
@@ -264,28 +265,6 @@ class TreeNodeExpansion(object):
             self.is_finished = True
 
 
-class TreeNodeStats(object):
-    def __init__(self, node):
-        self.node = node
-        self.visits = 0
-        self.sim_best = None
-        self.sim_sol = None
-
-    def add_visits(self, n):
-        self.visits += n
-        for ancestor in self.node.path:
-            ancestor.stats.visits += n
-
-    def include_node_solution(self, sol):
-        pass
-
-    def include_descendant_solution(self, sol):
-        pass
-
-    def exclude_descendant_solution(self, sol):
-        pass
-
-
 class TreeNode(object):
     """Base class for tree nodes. Subclasses should define:
 
@@ -301,7 +280,6 @@ class TreeNode(object):
     """
 
     Expansion = TreeNodeExpansion
-    Stats = TreeNodeStats
 
     @classmethod
     def root(cls, instance):
@@ -333,6 +311,11 @@ class TreeNode(object):
         self.sim_count = 0  # number of simulations in this subtree
         self.sim_sol = None  # solution of this node's own simulation
         self.sim_best = None  # best solution of simulations in this subtree
+
+    @property
+    def depth(self):
+        """Depth of the node in the tree, *i.e.* the number of ancestors of the current node."""
+        return len(self.path)
 
     @property
     def is_expanded(self):
@@ -418,6 +401,12 @@ class TreeNode(object):
         """
         raise NotImplementedError()
 
+    # This parameter controls interleaved selection of still-expanding parent nodes with their
+    # children, thereby allowing the search to deepen without forcing the full expansion of all
+    # ancestors. Turn off to force parents to be fully expanded before starting to select their
+    # children.
+    SELECTION_ALLOW_INTERLEAVING = False
+
     # MCTS-related methods
     def select(self, sols):
         """Pick the most favorable node for exploration.
@@ -429,15 +418,33 @@ class TreeNode(object):
         if self.is_exhausted:
             return None
         # Go down the tree picking the best child at each step.
-        node = self
-        while node.is_expanded:
-            children = node.children
-            if len(children) == 1:
-                node = children[0]
+        curr_node = None
+        next_node = self
+        allow_interleaving = self.SELECTION_ALLOW_INTERLEAVING
+        while next_node is not curr_node:
+            curr_node = next_node
+            curr_expansion = curr_node.expansion
+            if not curr_expansion.is_started:
+                break
+            if curr_expansion.is_finished:
+                cands = curr_node.children
+            elif allow_interleaving:
+                cands = itertools.chain(curr_node.children, [curr_node])
             else:
-                cands = max_elems(children, key=lambda n: n.selection_score(sols))
-                node = cands[0] if len(cands) == 1 else random.choice(cands)
-        return node
+                break
+            best_cands = max_elems(cands, key=lambda n: n.selection_score(sols))
+            next_node = best_cands[0] if len(best_cands) == 1 else random.choice(best_cands)
+        # TODO: remove the debug lines below
+        #     if curr_expansion.is_finished:
+        #         print(".", end="")
+        #     elif next_node is curr_node:
+        #         print("=", end="")
+        #     else:
+        #         print("!", end="")
+        # print("  ", end="")
+        # import sys
+        # sys.stdout.flush()
+        return curr_node
 
     # Parameters controlling the maximum exploitation score an infeasible solution can get and
     # the minimum exploitation score a feasible solution is guaranteed to have. See the
@@ -469,8 +476,12 @@ class TreeNode(object):
             raw_exploit = (z_worst - z_node) / (z_worst - z_best)
             assert 0.0 <= raw_exploit <= 1.0
         exploit = min_exploit + raw_exploit * (max_exploit - min_exploit)
-        explore = sqrt(2.0 * log(self.parent.sim_count) / self.sim_count)
-        return exploit + explore
+        explore = (
+            INF if self.parent is None else
+            sqrt(2.0 * log(self.parent.sim_count) / self.sim_count)
+        )
+        expand = 1.0 / (1.0 + self.depth)
+        return exploit + explore + expand
 
     # Parameter controlling how many child nodes (at most) are created during each iteration. The
     # default value is 1, which means that nodes are expanded one child at a time. This allows
@@ -502,15 +513,6 @@ class TreeNode(object):
             self.add_child(child)
             new_children.append(child)
         return new_children
-
-    # Parameter controlling how many simulations per newly created node are run. This is used by
-    # the 'simulations()' method below. However, that method can even do something more
-    # sophisticated like dynamically determining if it is worth it to run extra simulations.
-    SIMULATION_LIMIT = 1
-
-    def simulations(self):
-        for _ in range(self.SIMULATION_LIMIT):
-            yield self.simulate()
 
     def simulate(self):
         """Run a simulation from the current node to completion or infeasibility.
@@ -570,8 +572,9 @@ class TreeNode(object):
                     candidates = [child.sim_best for child in ancestor.children]
                     candidates.append(ancestor.sim_sol)
                     ancestor.sim_best = min(candidates, key=lambda s: s.value)
-            # Propagate deletion to parent if it exists and has become empty, otherwise stop.
-            if parent is None or len(parent.children) > 0:
+            # Propagate deletion to parent if it exists (true for all nodes except root) and has
+            # become exhausted (i.e. is fully expanded and has no more children).
+            if parent is None or not parent.is_exhausted:
                 break
             node = parent
 

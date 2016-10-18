@@ -6,6 +6,7 @@ from future.builtins import range
 
 import collections
 import random
+import time
 
 import rr.opt.mcts.basic as mcts
 
@@ -63,7 +64,7 @@ def verify_instance(instance, *args, **kwargs):
         items, capacity, optimum = instance()
     else:
         raise TypeError("unexpected instance value: {}".format(instance))
-    mcts.config_logging(level="DEBUG")
+    mcts.config_logging(level="INFO")
     root = KnapsackTreeNode.root([items, capacity])
     sols = mcts.run(root, *args, **kwargs)
     assert set(sols.best.data) == optimum
@@ -141,7 +142,7 @@ def main():
     for instance_fnc in [instance_1, instance_2, instance_8]:
         print("_" * 100)
         print(instance_fnc.__name__)
-        verify_instance(instance_fnc)
+        verify_instance(instance_fnc, rng_seed=int(time.time()*1000))
 
 
 if __name__ == "__main__":
