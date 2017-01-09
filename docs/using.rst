@@ -67,7 +67,7 @@ Once a custom :class:`TreeNode` class has been defined, MCTS can be run as in th
 
 .. code-block:: python
 
-    from rr.opt.mcts import basic as mcts
+    import rr.opt.mcts.simple as mcts
     import myproblem
 
     instance = myproblem.load("./instance_01.json")
