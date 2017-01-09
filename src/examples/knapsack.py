@@ -8,7 +8,7 @@ import collections
 import random
 import time
 
-import rr.opt.mcts.basic as mcts
+import rr.opt.mcts.simple as mcts
 
 
 Item = collections.namedtuple("Item", ["name", "value", "weight", "ratio"])

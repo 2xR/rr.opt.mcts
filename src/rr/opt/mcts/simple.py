@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from future.builtins import object, next, range
+from future.builtins import object, next, range, map
 
 import itertools
 import logging
@@ -12,9 +12,9 @@ import time
 from math import log, sqrt
 
 
-__version__ = "0.1.1"
+__version__ = "0.3.0"
 __author__ = "Rui Rei"
-__copyright__ = "Copyright 2016 {author}".format(author=__author__)
+__copyright__ = "Copyright 2016-2017 {author}".format(author=__author__)
 __license__ = "MIT"
 
 
@@ -22,11 +22,11 @@ INF = float("inf")
 logger = logging.getLogger(__name__)
 debug = logger.debug
 info = logger.info
-warn = logger.warn
+warn = logger.warning
 
 
 def run(root, time_limit=INF, iter_limit=INF, pruning=None,
-        rng_seed=None, rng_state=None, log_iter_interval=1000):
+        rng_seed=None, rng_state=None, log_iter_interval=1000, sols=None):
     """
     Monte Carlo Tree Search for **minimization** problems.
 
@@ -43,6 +43,8 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
         rng_state: an RNG state tuple, as obtained from `random.getstate()`. Can be used to set a
             particular RNG state at the start of the search.
         log_iter_interval (int): interval, in number of iterations, between automatic log messages.
+        sols (Solutions): a Solutions object obtained from a previous run of MCTS. If this argument
+            is provided, a previous search can be resumed from the point where it stopped.
 
     Returns:
         `Solutions` object containing the best solution found by the search, as well as the list
@@ -56,14 +58,20 @@ def run(root, time_limit=INF, iter_limit=INF, pruning=None,
         info("Seeding RNG with {}...".format(rng_seed))
         random.seed(rng_seed)
     if rng_state is not None:
+        rng_state_repr = "\n\t".join(map(str, rng_state))
+        info("Setting RNG state to...\n\t{}".format(rng_state_repr))
         random.setstate(rng_state)
     info("Pruning is {}.".format("enabled" if pruning else "disabled"))
 
     t0 = time.clock()  # initial cpu time
-    sols = Solutions()  # object used to keep track of our best/worst solutions
-    sol = root.simulate()  # run simulation from root and
-    root.backpropagate(sol)  # backpropagate the solution
-    sols.update(sol)
+    if sols is None:
+        info("Starting new search")
+        sols = Solutions()  # object used to keep track of our best/worst solutions
+        sol = root.simulate()  # run simulation from root and
+        root.backpropagate(sol)  # backpropagate the solution
+        sols.update(sol)
+    else:
+        info("Resuming previous search")
     t = time.clock() - t0  # cpu time elapsed
     i = 0  # iteration count
 
@@ -187,10 +195,12 @@ class Solutions(object):
     INIT_INFEAS_WORST = Solution(value=Infeasible(-INF), data="<initial worst infeas solution>")
 
     def __init__(self, *sols):
-        self.list = []  # Solution list
+        self.list = []  # Solution list (only keeps solutions that improve upper bound)
         self.best = self.INIT_INFEAS_BEST  # best overall solution
+        self.feas_count = 0  # number of feasible solutions seen
         self.feas_best = self.INIT_FEAS_BEST  # best feasible solution
         self.feas_worst = self.INIT_FEAS_WORST  # worst feasible solution
+        self.infeas_count = 0  # number of infeasible solutions seen
         self.infeas_best = self.INIT_INFEAS_BEST  # best (least) infeasible solution
         self.infeas_worst = self.INIT_INFEAS_WORST  # worst (most) infeasible solution
         for sol in sols:
@@ -198,15 +208,33 @@ class Solutions(object):
 
     def __str__(self):
         attrs = ["feas_best", "feas_worst", "infeas_best", "infeas_worst"]
-        descr = ", ".join("{}={}".format(attr, getattr(self, attr).value) for attr in attrs)
+        descr = "feas_pct={:.0f}/{:.0f}, ".format(self.feas_pct, self.infeas_pct)
+        descr += ", ".join("{}={}".format(attr, getattr(self, attr).value) for attr in attrs)
         return "{}({})".format(type(self).__name__, descr)
 
     def __repr__(self):
         return "<{} @{:x}>".format(self, id(self))
 
+    @property
+    def feas_ratio(self):
+        return self.feas_count / (self.feas_count + self.infeas_count)
+
+    @property
+    def feas_pct(self):
+        return self.feas_ratio * 100.0
+
+    @property
+    def infeas_ratio(self):
+        return 1.0 - self.feas_ratio
+
+    @property
+    def infeas_pct(self):
+        return self.infeas_ratio * 100.0
+
     def update(self, sol):
         # Update best and worst feasible solutions
         if sol.is_feas:
+            self.feas_count += 1
             if sol.value < self.feas_best.value:
                 debug("New best feasible solution: {} -> {}".format(self.feas_best, sol))
                 self.feas_best = sol
@@ -215,6 +243,7 @@ class Solutions(object):
                 self.feas_worst = sol
         # Update best and worst infeasible solutions
         else:
+            self.infeas_count += 1
             if sol.value < self.infeas_best.value:
                 debug("New best infeasible solution: {} -> {}".format(self.infeas_best, sol))
                 self.infeas_best = sol
@@ -446,12 +475,6 @@ class TreeNode(object):
         # sys.stdout.flush()
         return curr_node
 
-    # Parameters controlling the maximum exploitation score an infeasible solution can get and
-    # the minimum exploitation score a feasible solution is guaranteed to have. See the
-    # selection_score() method for more details.
-    INFEAS_MAX_EXPLOIT = 0.5
-    FEAS_MIN_EXPLOIT = 0.5
-
     def selection_score(self, sols):
         """Selection score uses an adapted UTC formula to balance exploration and exploitation.
 
@@ -462,14 +485,14 @@ class TreeNode(object):
             z_node = self.sim_best.value
             z_best = sols.feas_best.value
             z_worst = sols.feas_worst.value
-            min_exploit = self.FEAS_MIN_EXPLOIT
+            min_exploit = sols.infeas_count / (sols.feas_count + sols.infeas_count)
             max_exploit = 1.0
         else:
             z_node = self.sim_best.value.infeas
             z_best = sols.infeas_best.value.infeas
             z_worst = sols.infeas_worst.value.infeas
             min_exploit = 0.0
-            max_exploit = self.INFEAS_MAX_EXPLOIT
+            max_exploit = sols.infeas_count / (1 + sols.feas_count + sols.infeas_count)
         if z_best == z_worst:
             raw_exploit = 0.0
         else:
@@ -564,14 +587,14 @@ class TreeNode(object):
             # Unlink node from parent.
             if parent is not None:
                 parent.remove_child(node)
-            # Update sim_count and sim_best for all ancestor nodes (bottom-up order!).
+            # Update sim_best for all ancestor nodes (bottom-up order!).
             for ancestor in bottom_up_path:
-                ancestor.sim_count -= node.sim_count
-                if ancestor.sim_best is node.sim_best:
-                    # New ancestor sim_best is the best of children's sim_best or its own sim_sol.
-                    candidates = [child.sim_best for child in ancestor.children]
-                    candidates.append(ancestor.sim_sol)
-                    ancestor.sim_best = min(candidates, key=lambda s: s.value)
+                if ancestor.sim_best is not node.sim_best:
+                    break
+                # New ancestor sim_best is the best of children's sim_best or its own sim_sol.
+                candidates = [child.sim_best for child in ancestor.children]
+                candidates.append(ancestor.sim_sol)
+                ancestor.sim_best = min(candidates, key=lambda s: s.value)
             # Propagate deletion to parent if it exists (true for all nodes except root) and has
             # become exhausted (i.e. is fully expanded and has no more children).
             if parent is None or not parent.is_exhausted:

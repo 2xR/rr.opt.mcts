@@ -7,7 +7,7 @@ with open("README.rst", "rt") as readme_file:
     readme = readme_file.read()
 
 # Extract version information directly from the source code.
-with open("src/rr/opt/mcts/basic/__init__.py", "rt") as source_file:
+with open("src/rr/opt/mcts/simple.py", "rt") as source_file:
     source = source_file.read()
 match = re.search(r"__version__\s*=\s*(['\"])(\d+(\.\d+){2}([-+]?\w+)*)\1", source)
 if match is None:
@@ -16,11 +16,11 @@ version = match.group(2)
 
 
 setup(
-    name="rr.opt.mcts.basic",
+    name="rr.opt.mcts.simple",
     version=version,
     description="Simple implementation of Monte Carlo tree search.",
     long_description=readme,
-    url="https://github.com/2xR/rr.opt.mcts.basic",
+    url="https://github.com/2xR/rr.opt.mcts.simple",
     author="Rui Jorge Rei",
     author_email="rui.jorge.rei@googlemail.com",
     license="MIT",

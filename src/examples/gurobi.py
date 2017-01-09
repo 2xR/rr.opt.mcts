@@ -8,7 +8,7 @@ import sys
 import math
 
 import gurobipy
-import rr.opt.mcts.basic as mcts
+import rr.opt.mcts.simple as mcts
 
 
 random = mcts.random
