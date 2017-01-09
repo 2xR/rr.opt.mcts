@@ -252,7 +252,7 @@ html_use_index = False
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'rroptmctsbasicdoc'
+htmlhelp_basename = 'rroptmctssimpledoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -278,7 +278,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'rroptmctsbasic.tex', 'rr.opt.mcts.simple Documentation',
+    (master_doc, 'rroptmctssimple.tex', 'rr.opt.mcts.simple Documentation',
      'Rui Jorge Rei', 'manual'),
 ]
 
@@ -314,7 +314,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'rroptmctsbasic', 'rr.opt.mcts.simple Documentation',
+    (master_doc, 'rroptmctssimple', 'rr.opt.mcts.simple Documentation',
      [author], 1)
 ]
 
@@ -329,8 +329,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'rroptmctsbasic', 'rr.opt.mcts.simple Documentation',
-     author, 'rroptmctsbasic', 'One line description of project.',
+    (master_doc, 'rroptmctssimple', 'rr.opt.mcts.simple Documentation',
+     author, 'rroptmctssimple', 'One line description of project.',
      'Miscellaneous'),
 ]
 
