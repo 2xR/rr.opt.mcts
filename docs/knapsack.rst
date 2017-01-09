@@ -62,7 +62,7 @@ The first half of this method should be fairly straightforward: the highest valu
 :meth:`simulate`
 ----------------
 
-The simulation strategy is defined by this method. Here, the simulation performs a dive in the tree using a simple uniform random selection of the branch to follow at each step. Then, the objective value of the solution obtained is multiplied by -1 because the :mod:`rr.opt.mcts.basic` implementation deals with minimization problems only, and the knapsack problem is a maximization problem.
+The simulation strategy is defined by this method. Here, the simulation performs a dive in the tree using a simple uniform random selection of the branch to follow at each step. Then, the objective value of the solution obtained is multiplied by -1 because the :mod:`rr.opt.mcts.simple` implementation deals with minimization problems only, and the knapsack problem is a maximization problem.
 
 .. literalinclude:: ../src/rr/opt/mcts/basic/examples/knapsack.py
     :pyobject: KnapsackTreeNode.simulate

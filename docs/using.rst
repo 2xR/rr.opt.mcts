@@ -1,11 +1,11 @@
-Using :mod:`rr.opt.mcts.basic`
-==============================
+Using :mod:`rr.opt.mcts.simple`
+===============================
 
-The :mod:`rr.opt.mcts.basic` module provides a simple, self-contained\ [#]_ implementation of Monte Carlo tree search, and a framework for users to define their own :class:`TreeNode` classes for specific problems.
+The :mod:`rr.opt.mcts.simple` module provides a simple, self-contained\ [#]_ implementation of Monte Carlo tree search, and a framework for users to define their own :class:`TreeNode` classes for specific problems.
 
 To use the framework, a user should simply define their own tree node class by subclassing :class:`TreeNode`. The :class:`TreeNode` base class defines some internal attributes that are used to manage parent-child connections and keep track of simulations. Node objects can define their own internal structure freely, with the exception of the names ``path``, ``parent``, ``children``, ``sim_count``, ``sim_sol`` and ``sim_best``, as these are used for the aforementioned purposes. While the base :class:`TreeNode` class takes care of general MCTS-related operations, problem-specific logic must be implemented in subclasses by defining a few methods. These methods are documented below.
 
-.. py:module:: rr.opt.mcts.basic
+.. py:module:: rr.opt.mcts.simple
 
 .. autoclass:: TreeNode
 
@@ -55,9 +55,9 @@ Problem-specific node attributes should not be added in the regular Python objec
 Writing a :meth:`simulate` method
 ---------------------------------
 
-The simulation algorithm lies at the heart of MCTS, and its goal is to reach a full solution or infeasibility by quickly diving down the search tree in a possibly (semi-)randomized manner. In the :mod:`rr.opt.mcts.basic` framework, the simulation algorithm should be defined as a :meth:`simulate` method within your :class:`TreeNode` subclass. The only requisite on the :meth:`simulate` method is that it must return a :class:`Solution` object.
+The simulation algorithm lies at the heart of MCTS, and its goal is to reach a full solution or infeasibility by quickly diving down the search tree in a possibly (semi-)randomized manner. In the :mod:`rr.opt.mcts.simple` framework, the simulation algorithm should be defined as a :meth:`simulate` method within your :class:`TreeNode` subclass. The only requisite on the :meth:`simulate` method is that it must return a :class:`Solution` object.
 
-:class:`Solution` objects contain a value representing the solution's objective function value for feasible solutions, or its degree of infeasibility (see :class:`Infeasible`) otherwise. Also, the constructor of the :class:`Solution` object can take a ``data`` argument, which is an object of any type that is meant to represent the actual solution, *i.e.* a complete set of decision variable assignments. This is helpful if something is to be done with the solutions found, after the algorithm has finished running. The :mod:`rr.opt.mcts.basic` framework does not use solution data for any purpose, therefore attaching solution data to a :class:`Solution` object is entirely optional. However, the solution value **must** be present.
+:class:`Solution` objects contain a value representing the solution's objective function value for feasible solutions, or its degree of infeasibility (see :class:`Infeasible`) otherwise. Also, the constructor of the :class:`Solution` object can take a ``data`` argument, which is an object of any type that is meant to represent the actual solution, *i.e.* a complete set of decision variable assignments. This is helpful if something is to be done with the solutions found, after the algorithm has finished running. The :mod:`rr.opt.mcts.simple` framework does not use solution data for any purpose, therefore attaching solution data to a :class:`Solution` object is entirely optional. However, the solution value **must** be present.
 
 
 Running the algorithm
@@ -83,7 +83,7 @@ Once a custom :class:`TreeNode` class has been defined, MCTS can be run as in th
         print(sols.best.data)  # solution data
         print(sols.best.is_opt)  # boolean indicating whether the best solution found is optimal
 
-The parameters and return value of the :func:`rr.opt.mcts.basic.run` function are documented below:
+The parameters and return value of the :func:`rr.opt.mcts.simple.run` function are documented below:
 
 .. autofunction:: run
 
