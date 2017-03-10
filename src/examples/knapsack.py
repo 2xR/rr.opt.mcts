@@ -5,10 +5,10 @@ from __future__ import unicode_literals
 from future.builtins import range
 
 import collections
-import random
 import time
 
-import rr.opt.mcts.simple as mcts
+from rr.opt import mcts
+from rr.opt.mcts.solution import SolutionTracker
 
 
 Item = collections.namedtuple("Item", ["name", "value", "weight", "ratio"])
@@ -64,28 +64,33 @@ def verify_instance(instance, *args, **kwargs):
         items, capacity, optimum = instance()
     else:
         raise TypeError("unexpected instance value: {}".format(instance))
-    mcts.config_logging(level="INFO")
-    root = KnapsackTreeNode.root([items, capacity])
-    sols = mcts.run(root, *args, **kwargs)
-    assert set(sols.best.data) == optimum
-    assert root.is_exhausted
+    mcts.utils.config_logging(level="INFO")
+    run = kwargs.pop("run", True)
+    solver = mcts.Solver(root=KnapsackState(items, capacity), *args, **kwargs)
+    if run:
+        sol = solver.run()
+        assert set(sol.data) == optimum
+        assert solver.root.is_exhausted
+        assert solver.root.stats.feas.best is SolutionTracker.INIT_BEST
+        assert solver.root.stats.feas.worst is SolutionTracker.INIT_WORST
+        assert solver.root.stats.infeas.best is SolutionTracker.INIT_BEST
+        assert solver.root.stats.infeas.worst is SolutionTracker.INIT_WORST
+        assert solver.root.stats.overall.best is SolutionTracker.INIT_BEST
+        assert solver.root.stats.overall.worst is SolutionTracker.INIT_WORST
+    return solver
 
 
-class KnapsackTreeNode(mcts.TreeNode):
-    @classmethod
-    def root(cls, instance):
-        items, capacity = instance
-        root = cls()
-        root.items_left = list(sorted(items, key=lambda i: i.ratio))
-        root.items_packed = []
-        root.capacity_required = sum(i.weight for i in items)
-        root.capacity_left = capacity
-        root.total_value = 0
-        root.upper_bound = None
-        return root
+class KnapsackState(mcts.State):
+    def __init__(self, items, capacity):
+        self.items_left = sorted(items, key=lambda i: i.ratio)
+        self.items_packed = []
+        self.capacity_required = sum(i.weight for i in items)
+        self.capacity_left = capacity
+        self.total_value = 0
+        self.upper_bound = None
 
     def copy(self):
-        clone = mcts.TreeNode.copy(self)
+        clone = mcts.State.copy(self)
         clone.items_left = list(self.items_left)
         clone.items_packed = list(self.items_packed)
         clone.capacity_required = self.capacity_required
@@ -94,7 +99,10 @@ class KnapsackTreeNode(mcts.TreeNode):
         clone.upper_bound = None
         return clone
 
-    def branches(self):
+    def is_terminal(self):
+        return len(self.items_left) == 0
+
+    def actions(self):
         return (True, False) if len(self.items_left) > 0 else ()
 
     def apply(self, pack_item):
@@ -106,7 +114,6 @@ class KnapsackTreeNode(mcts.TreeNode):
             self.capacity_left -= item.weight
             self.items_left = [i for i in self.items_left if i.weight <= self.capacity_left]
             self.capacity_required = sum(i.weight for i in self.items_left)
-
         if self.capacity_required <= self.capacity_left:
             self.total_value += sum(i.value for i in self.items_left)
             self.capacity_left -= sum(i.weight for i in self.items_left)
@@ -114,28 +121,23 @@ class KnapsackTreeNode(mcts.TreeNode):
             self.items_packed.extend(self.items_left)
             self.items_left = []
 
-    def simulate(self):
-        node = self.copy()
-        while len(node.items_left) > 0:
-            node.apply(random.choice([True, False]))  # monte carlo simulation
+    def solution(self):
         return mcts.Solution(
-            value=(node.total_value * -1),  # flip objective function
-            data=node.items_packed,
+            value=(self.total_value * -1),  # flip objective value
+            data=self.items_packed,
         )
 
     def bound(self):
-        if self.upper_bound is None:
-            bound = self.total_value
-            capacity = self.capacity_left
-            for item in reversed(self.items_left):
-                if item.weight <= capacity:
-                    bound += item.value
-                    capacity -= item.weight
-                else:
-                    bound += item.value * capacity / item.weight
-                    break
-            self.upper_bound = bound
-        return self.upper_bound * -1  # flip bound
+        bound = self.total_value
+        capacity = self.capacity_left
+        for item in reversed(self.items_left):
+            if item.weight <= capacity:
+                bound += item.value
+                capacity -= item.weight
+            else:
+                bound += item.value * capacity / item.weight
+                break
+        return bound * -1  # flip bound
 
 
 def main():

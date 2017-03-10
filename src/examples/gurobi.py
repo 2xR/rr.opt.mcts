@@ -6,14 +6,14 @@ from future.builtins import object, dict, range
 
 import sys
 import math
+import random
 
 import gurobipy
-import rr.opt.mcts.simple as mcts
+from rr.opt import mcts
 
 
-random = mcts.random
-mcts.config_logging(level="DEBUG")
-logger = mcts.logger
+mcts.utils.config_logging(level="DEBUG")
+logger = mcts.utils.logger
 info = logger.info
 debug = logger.debug
 EPS = 1e-9
@@ -86,40 +86,38 @@ class IntVarData(object):
         return "<IntVar {} @{:x}>".format(self.name, id(self))
 
 
-class MipTreeNode(mcts.TreeNode):
-    @classmethod
-    def root(cls, filename):
-        root = cls()
-        root.model = gurobipy.gurobi.read(filename)  # *shared* gurobi model :: Model
-        root.model.params.outputFlag = 0
+class MipState(mcts.State):
 
-        root.domains = {}  # *node* variable domains :: {IntVarData: (lb, ub)}
-        root.relaxed = []  # *node* free vars :: [IntVarData]
-        root.upper_bound = None  # *node* upper bound :: float | Infeasible
-        root.lower_bound = None  # *node* lower bound :: float | Infeasible
+    def __init__(self, filename):
+        self.model = gurobipy.gurobi.read(filename)  # *shared* gurobi model :: Model
+        self.model.params.outputFlag = 0
+
+        self.domains = {}  # *local* variable domains :: {IntVarData: (lb, ub)}
+        self.relaxed = []  # *local* free vars :: [IntVarData]
+        self.upper_bound = None  # *local* upper bound :: float | Infeasible
+        self.lower_bound = None  # *local* lower bound :: float | Infeasible
 
         # collect integer variables and relax them
-        for var in root.model.getVars():
+        for var in self.model.getVars():
             if var.vType != gurobipy.GRB.CONTINUOUS:
                 var.vType = gurobipy.GRB.CONTINUOUS
                 lb = int(math.ceil(var.lb - EPS))
                 ub = int(math.floor(var.ub + EPS))
                 assert lb <= ub
                 vdata = IntVarData(var)
-                root.domains[vdata] = (lb, ub)
-                root.relaxed.append(vdata)
+                self.domains[vdata] = (lb, ub)
+                self.relaxed.append(vdata)
         # ensure that list is ordered to maintain determinism
-        root.relaxed.sort(key=lambda vd: vd.name)
-        info("model has {} vars ({} int)".format(root.model.NumVars, root.model.NumIntVars))
-        info("int vars: {}".format([vd.name for vd in root.relaxed]))
-        assert len(root.domains) == len(root.relaxed) == root.model.NumIntVars
+        self.relaxed.sort(key=lambda vd: vd.name)
+        info("model has {} vars ({} int)".format(self.model.NumVars, self.model.NumIntVars))
+        info("int vars: {}".format([vd.name for vd in self.relaxed]))
+        assert len(self.domains) == len(self.relaxed) == self.model.NumIntVars
 
-        root.propagate()  # reduce domains and fix any singleton variables
-        root.solve_relaxation()  # solve root relaxation to determine bound
+        self.propagate()  # reduce domains and fix any singleton variables
+        self.solve_relaxation()  # solve root relaxation to determine bound
         info("ROOT RELAXATION:")
-        for vdata in root.domains.keys():
+        for vdata in self.domains.keys():
             info("\t{}: {}".format(vdata.name, vdata.var.x))
-        return root
 
     def fixed(self):
         return {vd.name: lb for vd, (lb, ub) in self.domains.items() if lb == ub}
@@ -131,13 +129,10 @@ class MipTreeNode(mcts.TreeNode):
             "\trelaxed: {}".format([vd.name for vd in self.relaxed]),
             "\tupper_bound: {}".format(self.upper_bound),
             "\tlower_bound: {}".format(self.lower_bound),
-            "\tsim_count: {}".format(self.sim_count),
-            "\tsim_sol: {}".format(self.sim_sol),
-            "\tsim_best: {}".format(self.sim_best),
         ])
 
     def copy(self):
-        clone = mcts.TreeNode.copy(self)
+        clone = mcts.State.copy(self)
         # global data (shallow-copied)
         clone.model = self.model
         # local data (which must be copied)
@@ -147,15 +142,17 @@ class MipTreeNode(mcts.TreeNode):
         clone.lower_bound = self.lower_bound
         return clone
 
-    def branches(self):
+    def actions(self):
         if len(self.relaxed) == 0:
             return []
         vdata = random.choice(self.relaxed)
         lb, ub = self.domains[vdata]
-        return [(vdata, value) for value in range(lb, ub + 1)]
+        actions = [(vdata, value) for value in range(lb, ub+1)]
+        random.shuffle(actions)
+        return actions
 
-    def apply(self, branch):
-        vdata, value = branch
+    def apply(self, action):
+        vdata, value = action
         lb, ub = self.domains[vdata]
         assert lb < ub
         assert lb <= value <= ub
@@ -168,7 +165,7 @@ class MipTreeNode(mcts.TreeNode):
             assert len(self.relaxed) == 0
 
     def solve_relaxation(self):
-        # solve linear relaxation to find a lower bound for the node
+        # solve linear relaxation to find a lower bound for this state
         if solve_lp(self.model, self.domains):
             self.lower_bound = self.model.objVal
             # if all unfixed variables have integral values, we have a full solution
@@ -187,17 +184,17 @@ class MipTreeNode(mcts.TreeNode):
         # return a solution immediately if this is a leaf node
         if len(self.relaxed) == 0:
             return mcts.Solution(value=self.upper_bound, data=self.fixed())
-        node = self.copy()
-        node.solve_relaxation()  # determine variable values in initial LP
-        while len(node.relaxed) > 0:
-            vdata = random.choice(node.relaxed)
+        state = self.copy()
+        state.solve_relaxation()  # determine variable values in initial LP
+        while len(state.relaxed) > 0:
+            vdata = random.choice(state.relaxed)
             value = vdata.var.x
             if random.random() < value - math.floor(value):
                 value = int(math.ceil(value))
             else:
                 value = int(math.floor(value))
-            node.apply((vdata, value))
-        return mcts.Solution(value=node.upper_bound, data=node.fixed())
+            state.apply((vdata, value))
+        return mcts.Solution(value=state.upper_bound, data=state.fixed())
 
     def bound(self):
         return self.lower_bound
@@ -249,16 +246,16 @@ class MipTreeNode(mcts.TreeNode):
 
 
 def main(instance, niter, seed):
-    root = MipTreeNode.root(instance)
-    sols = mcts.run(root, iter_limit=niter, rng_seed=seed)
-    info("solutions found: {}".format(sols))
-    info("best found objective: {}".format(sols.best.value))
-    if sols.best.is_feas:
+    root = MipState(instance)
+    solver = mcts.Solver(root, rng_seed=seed)
+    best = solver.run(iter_limit=niter)
+    info("best solution found: {}".format(best))
+    if best.is_feas:
         info("best solution (non-zeros):")
-        for var, val in sols.best.data.items():
+        for var, val in best.data.items():
             if is_nonzero(val):
                 info("\t{}:\t{}".format(var, val))
-    return root, sols
+    return solver
 
 
 usage = """usage: {prog} filename N seed
