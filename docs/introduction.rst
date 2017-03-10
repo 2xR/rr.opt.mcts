@@ -5,7 +5,7 @@ Monte Carlo tree search (MCTS) is a very suitable algorithm to tackle difficult 
 
 The core concept of MCTS is that of Monte Carlo simulations, which are used to estimate the value of tree nodes. The term "Monte Carlo" is used here to indicate that some degree of probabilistic behavior is included in the simulation, and that repetition is used to improve the accuracy of the method, as in the traditional meaning of Monte Carlo methods. In an extreme case, actions are randomly selected with uniform probability at each step of the simulation until a leaf is reached -- in the context of optimization, this is either a feasible or infeasible solution.
 
-As more time is alotted to the algorithm, a larger part of the search space is covered and the quality of the node value estimates is improved, especially for nodes closer to the root. This focuses the search on the most promising regions of the tree, and in turn leads to better allocation of computational resources. However, the node selection strategy typically incorporates a term to promote exploration of unknown regions. This term is combined with an exploitation-oriented term, which tends to narrow the scope of the search to the areas around known good solutions.
+As more time is allotted to the algorithm, a larger part of the search space is covered and the quality of the node value estimates is improved, especially for nodes closer to the root. This focuses the search on the most promising regions of the tree, and in turn leads to better allocation of computational resources. However, the node selection strategy typically incorporates a term to promote exploration of unknown regions. This term is combined with an exploitation-oriented term, which tends to narrow the scope of the search to the areas around known good solutions.
 
 Below is a highly simplified pseudo-code version of the algorithm for maximization problems:
 
@@ -47,7 +47,7 @@ Simulation
 
 The objective of the simulation step is to make a quick dive and attempt to find complete (feasible) solutions. Even if that cannot be achieved, the degree of infeasibility of a solution found during a simulation can be used to guide subsequent iterations of the algorithm.
 
-Ideally, simulations should be computationally cheap in order to afford as many simulations as possible within the alloted computational budget. Expensive simulations would not allow much information to be gathered and value estimates to improve.
+Ideally, simulations should be computationally cheap in order to afford as many simulations as possible within the allotted computational budget. Expensive simulations would not allow much information to be gathered and value estimates to improve.
 
 
 Backpropagation

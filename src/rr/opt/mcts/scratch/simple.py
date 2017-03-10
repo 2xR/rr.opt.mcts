@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from future.builtins import object, next, range, map
+from future.builtins import object, next, map
 
 import itertools
 import logging
@@ -527,14 +527,15 @@ class TreeNode(object):
             self.children = []
             expansion.start()
         new_children = []
-        for _ in range(self.EXPANSION_LIMIT):
-            if expansion.is_finished:
-                break
+        expansion_count = 0
+        expansion_limit = self.EXPANSION_LIMIT
+        while expansion_count < expansion_limit and not expansion.is_finished:
             child = expansion.next()
             if pruning and child.bound() >= cutoff:
                 continue
             self.add_child(child)
             new_children.append(child)
+            expansion_count += 1
         return new_children
 
     def simulate(self):

@@ -36,5 +36,3 @@ Contributing
 ------------
 
 Contributions are welcome through github pull requests (tests would sure be nice to have... :P).
-
-And if you're using the library and would like to say *"thanks!"* and/or keep me working on it, why not `buy me a beer <https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=2UMJC8HSU8RFJ&lc=PT&item_name=DoubleR&item_number=github%2f2xR%2fpaypal&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted>`_?
