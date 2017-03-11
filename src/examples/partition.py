@@ -1,8 +1,15 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import sys
+
 from math import log
 from bisect import insort
 from collections import defaultdict
 
-import rr.opt.mcts.simple as mcts
+from rr.opt import mcts
 
 
 JOIN = 0
@@ -33,28 +40,32 @@ def karmarkar_karp(labels):
     return edges, sum_remaining
 
 
-class TreeNode(mcts.TreeNode):
-    EXPANSION_LIMIT = float("inf")
+class NppTreeNode(mcts.TreeNode):
 
-    @classmethod
-    def root(cls, instance):
+    EXPANSION_LIMIT = float("inf")  # 2 would also suffice
+    EXPLORATION_COEFF = 0.05
+
+
+class NppState(mcts.State):
+
+    def __init__(self, instance):
         if isinstance(instance, str):
             instance = load_instance(instance)
         assert type(instance) is list  # NPP instances are flat lists of positive integers
-        root = cls()
-        root.labels = sorted((n, i) for i, n in enumerate(instance))  # vertex labels (nums)
-        root.edges = []  # [(i, j, EDGE_TYPE<JOIN|SPLIT>)]
-        root.sum_remaining = sum(instance)  # sum of all numbers still unassigned
-        return root
+        self.labels = sorted((n, i) for i, n in enumerate(instance))  # vertex labels (nums)
+        self.edges = []  # [(i, j, EDGE_TYPE<JOIN|SPLIT>)]
+        self.sum_remaining = sum(instance)  # sum of all numbers still unassigned
+        self.kk_sol = None
 
     def copy(self):
-        clone = mcts.TreeNode.copy(self)
+        clone = mcts.State.copy(self)
         clone.labels = list(self.labels)
         clone.edges = list(self.edges)
         clone.sum_remaining = self.sum_remaining
+        clone.kk_sol = self.kk_sol
         return clone
 
-    def branches(self):
+    def actions(self):
         # If there are only 4 or less items left, KK is optimal (and we've already done it in
         # simulate()). We only branch if the largest number does not exceed the sum of the other
         # items +1, and that was also already verified in the simulate() method.
@@ -73,9 +84,9 @@ class TreeNode(mcts.TreeNode):
 
     def simulate(self):
         edges = self.edges
-        if len(edges) > 0 and edges[-1][-1] == SPLIT:
+        if self.kk_sol is not None and len(edges) > 0 and edges[-1][-1] == SPLIT:
             # reuse parent solution if this is the differencing child
-            return self.parent.sim_sol
+            return self.kk_sol
         labels = self.labels
         largest, i = labels[-1]
         delta = largest - (self.sum_remaining - largest)
@@ -86,10 +97,11 @@ class TreeNode(mcts.TreeNode):
             for _, j in labels:
                 edges.append((i, j, SPLIT))
             del labels[:]  # force next branches() call to return empty branch list
-            return mcts.Solution(value=objective(delta), data=edges)
+            self.kk_sol = mcts.Solution(value=objective(delta), data=edges)
         else:
             kk_edges, diff = karmarkar_karp(self.labels)
-            return mcts.Solution(value=objective(diff), data=edges+kk_edges)
+            self.kk_sol = mcts.Solution(value=objective(diff), data=edges+kk_edges)
+        return self.kk_sol
 
 
 def make_partition(edges):
@@ -118,6 +130,23 @@ def _assign_subset(adj, subset, i, s):
             _assign_subset(adj, subset, j, s_j)
 
 
-mcts.config_logging()
-r = TreeNode.root("instances/npp/hard1000.dat")
-s = mcts.run(r, iter_limit=1000)
+mcts.utils.config_logging()
+r = NppTreeNode(NppState("instances/npp/hard0100.dat"))
+s = mcts.Solver(r)
+
+
+if __name__ == "__main__":
+    i = "instances/npp/hard1000.dat"
+    t = 60.0
+    if len(sys.argv) > 1:
+        i = sys.argv[1]
+    if len(sys.argv) > 2:
+        t = float(sys.argv[2])
+    if len(sys.argv) > 3:
+        print("Usage: partition.py [<instance> [<time>]]")
+        exit(1)
+
+    mcts.utils.config_logging()
+    r = NppTreeNode(NppState(i))
+    s = mcts.Solver(r)
+    s.run(t)

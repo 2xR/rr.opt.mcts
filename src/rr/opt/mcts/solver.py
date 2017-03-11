@@ -61,6 +61,7 @@ class Solver(object):
         root.stats.overall.on_update.append(self.overall.update)
 
     def run(self, time_limit=INF, iter_limit=INF):
+        info("Running with time_limit={} and iter_limit={}".format(time_limit, iter_limit))
         root = self.root
         cpu = self.cpu
         time_limit += cpu.elapsed  # convert rel time limit into abs limit

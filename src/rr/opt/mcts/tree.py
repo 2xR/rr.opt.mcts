@@ -106,11 +106,12 @@ class TreeNode(NaryTreeNode):
         """
         return self.expansion.is_finished and len(self.children) == 0
 
-    # This parameter controls interleaved selection of still-expanding parent nodes with their
-    # children, thereby allowing the search to deepen without forcing the full expansion of all
-    # ancestors. Turn off to force parents to be fully expanded before starting to select their
-    # children.
     SELECTION_INTERLEAVING = False
+    """This parameter controls interleaved selection of still-expanding parent nodes with their
+    children, thereby allowing the search to deepen without forcing the full expansion of all
+    ancestors. Turn off to force parents to be fully expanded before starting to select their
+    children.
+    """
 
     def select(self):
         """Go down the tree picking the "best" (*i.e.* with highest selection_score()) child at
@@ -136,15 +137,26 @@ class TreeNode(NaryTreeNode):
             node = next_node
         return node
 
+    EXPLORATION_COEFF = 1.0
+    """UCT exploration coefficient. Controls how much weight the exploration term is given. Set
+    to 0 for best-first search.
+    """
+
     def selection_score(self):
         stats = self.stats
-        return stats.opt_exploitation_score() + stats.uct_exploration_score()
+        exploration_coeff = self.EXPLORATION_COEFF
+        if exploration_coeff == 0.0:
+            exploration_term = 0.0
+        else:
+            exploration_term = exploration_coeff * stats.uct_exploration_score()
+        return stats.opt_exploitation_score() + exploration_term
 
-    # Parameter controlling how many child nodes (at most) are created for each call to expand()
-    # (normally one per iteration of MCTS). The default value is 1, which means that nodes are
-    # expanded one child at a time. This allows the algorithm to pick other sites for exploration
-    #  if the initial children of the current node reveal it to be a bad choice.
     EXPANSION_LIMIT = 1
+    """Parameter controlling how many child nodes (at most) are created for each call to expand()
+    (normally one per iteration of MCTS). The default value is 1, which means that nodes are
+    expanded one child at a time. This allows the algorithm to pick other sites for exploration
+    if the initial children of the current node reveal it to be a bad choice.
+    """
 
     def expand(self, pruning=False):
         """Create and link (after performing optional pruning checks) new child nodes.
@@ -176,13 +188,14 @@ class TreeNode(NaryTreeNode):
             if len(self.children) == 0:
                 self.delete()
             else:
-                self.expansion_finished()
+                self.expansion_finished(pruning)
 
-    def expansion_finished(self):
+    def expansion_finished(self, pruning):
         """Called when the node's expansion is complete, but the node is not yet exhausted. This
         can be used to save resources *e.g.* by releasing the memory taken by the node's state.
         """
-        self.bound()  # ensures we cache the node's bound before getting rid of the state
+        if pruning:
+            self.bound()  # ensures we cache the node's bound before getting rid of the state
         self.state = None
 
     def simulate(self):
