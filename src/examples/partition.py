@@ -43,7 +43,7 @@ def karmarkar_karp(labels):
 class NppTreeNode(mcts.TreeNode):
 
     EXPANSION_LIMIT = float("inf")  # 2 would also suffice
-    EXPLORATION_COEFF = 0.05
+    EXPLORATION_COEFF = 0.1
 
 
 class NppState(mcts.State):
@@ -56,6 +56,7 @@ class NppState(mcts.State):
         self.edges = []  # [(i, j, EDGE_TYPE<JOIN|SPLIT>)]
         self.sum_remaining = sum(instance)  # sum of all numbers still unassigned
         self.kk_sol = None
+        self.kk_score = 0
 
     def copy(self):
         clone = mcts.State.copy(self)
@@ -63,6 +64,7 @@ class NppState(mcts.State):
         clone.edges = list(self.edges)
         clone.sum_remaining = self.sum_remaining
         clone.kk_sol = self.kk_sol
+        clone.kk_score = self.kk_score
         return clone
 
     def actions(self):
@@ -79,6 +81,7 @@ class NppState(mcts.State):
         if edge_type == SPLIT:
             insort(labels, (n-m, i))
             self.sum_remaining -= 2 * m
+            self.kk_score += 1  # we've taken a KK decision, increment KK score
         else:
             insort(labels, (n+m, i))
 
@@ -130,13 +133,8 @@ def _assign_subset(adj, subset, i, s):
             _assign_subset(adj, subset, j, s_j)
 
 
-mcts.utils.config_logging()
-r = NppTreeNode(NppState("instances/npp/hard0100.dat"))
-s = mcts.Solver(r)
-
-
 if __name__ == "__main__":
-    i = "instances/npp/hard1000.dat"
+    i = "instances/npp/hard0100.dat"
     t = 60.0
     if len(sys.argv) > 1:
         i = sys.argv[1]

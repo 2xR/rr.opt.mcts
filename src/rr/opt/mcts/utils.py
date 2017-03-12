@@ -79,7 +79,7 @@ def config_logging(name="rr.opt.mcts", level="INFO"):
         'disable_existing_loggers': False,
         'formatters': {
             'standard': {
-                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+                'format': '[%(levelname)s] %(name)s: %(message)s',
             },
         },
         'handlers': {
